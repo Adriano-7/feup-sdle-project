@@ -1,5 +1,12 @@
 package org.project.client;
 
+import java.util.List;
+import java.util.Scanner;
+import java.util.UUID;
+
+import org.project.model.ShoppingList;
+
+
 public class Client {
     Scanner scanner = new Scanner(System.in);
     LocalDB localDB = new LocalDB();
@@ -88,15 +95,10 @@ public class Client {
                     System.out.println("Invalid option. Please try again.");
             }
         }
-import java.util.StringTokenizer;
 
-import org.zeromq.SocketType;
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
+    }
 
-public class Client
-{
-    public static void main(String[] args)
+    /*public static void xmq(String[] args)
     {
         try (ZContext context = new ZContext()) {
             //  Socket to talk to server
@@ -131,5 +133,5 @@ public class Client
                 )
             );
         }
-    }
+    }*/
 }
