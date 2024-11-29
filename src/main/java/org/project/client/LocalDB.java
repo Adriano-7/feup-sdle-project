@@ -51,8 +51,7 @@ public class LocalDB {
         System.out.println("Saving shopping list to local database...");
         try {
             FileReader reader = new FileReader(filePath);
-            Type type = new TypeToken<Map<String, ShoppingList>>() {
-            }.getType();
+            Type type = new TypeToken<Map<String, ShoppingList>>() {}.getType();
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
             reader.close();
 
@@ -60,9 +59,7 @@ public class LocalDB {
                 shoppingLists = new HashMap<>();
             }
 
-            shoppingLists.put(shoppingList.getId(), shoppingList);
-
-            System.out.println(shoppingLists);
+            shoppingLists.put(shoppingList.getID(), shoppingList);
             FileWriter writer = new FileWriter(filePath);
             gson.toJson(shoppingLists, writer);
             writer.close();

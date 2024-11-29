@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * BGCounter (Bounded Grow-Only Counter) Conflict-free Replicated Data Type (CRDT)
- *
  * Extends the GCounter with a maximum value constraint while maintaining:
  * - Monotonically increasing counter
  * - Supports concurrent updates across distributed systems
@@ -92,6 +91,9 @@ public class BGCounter<K> implements Serializable {
      * @throws IllegalStateException if node doesn't exist
      */
     public boolean increment(K nodeId) {
+        if (!payload.containsKey(nodeId)) {
+            addNode(nodeId);
+        }
         AtomicLong counter = payload.get(nodeId);
 
         if (counter == null) {

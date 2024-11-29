@@ -1,26 +1,33 @@
 package org.project.model;
+import org.project.data_structures.BGCounter;
+
 import java.util.List;
 import java.util.UUID;
 
 public class Item {
-    private int id;
+    private UUID itemID;
     private String name;
-    private int quantity;
+    BGCounter<String> counter;
 
     public Item(String name, int quantity) {
+        this.itemID = UUID.randomUUID();
         this.name = name;
-        this.quantity = quantity;
+        this.counter = new BGCounter<>(quantity);
     }
 
     public String getName() {
         return name;
     }
 
-    public int getQuantity() {
-        return quantity;
+    public long getQuantity() {
+        return counter.query();
     }
 
-    public void consume(){
-        this.quantity = Math.max(0, this.quantity-1);
+    public boolean consume(String user){
+        return counter.increment(user);
+    }
+
+    public String toString() {
+        return "NAME: " + name + " | QUANTITY: " + counter.query() + " / " + counter.getMaxValue();
     }
 }
