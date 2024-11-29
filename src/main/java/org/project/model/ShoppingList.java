@@ -58,9 +58,9 @@ public class ShoppingList {
         this.lastModified = LocalDateTime.now();
     }
 
-    public boolean consumeItem(int index, String user) {
+    public long consumeItem(int index, String user, int quantity) {
         Item item = this.items.get(index);
-        return item.consume(user);
+        return item.consume(user, quantity);
     }
 
     @Override

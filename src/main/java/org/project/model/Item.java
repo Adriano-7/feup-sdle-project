@@ -23,8 +23,13 @@ public class Item {
         return counter.query();
     }
 
-    public boolean consume(String user){
-        return counter.increment(user);
+    public long consume(String user, long quantity) {
+        for (int i = 0; i < quantity; i++) {
+            if (!counter.increment(user)) {
+                return i;
+            }
+        }
+        return quantity;
     }
 
     public String toString() {

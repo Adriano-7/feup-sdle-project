@@ -40,7 +40,6 @@ public class Client {
                     System.out.println("Invalid option. Please try again.");
             }
             client.updateShoppingList();
-            int a = 1;
         }
     }
 
@@ -94,13 +93,14 @@ public class Client {
                     // get and int from the user
                     int itemIndex = scanner.nextInt();
                     scanner.nextLine();
-
-                    int a = 1;
-                    boolean consumed = shoppingList.consumeItem(itemIndex, userID.toString());
-                    if (consumed) {
-                        System.out.println("Item consumed successfully!");
+                    System.out.println("How many?");
+                    int num = scanner.nextInt();
+                    scanner.nextLine();
+                    long itemsConsumed = shoppingList.consumeItem(itemIndex, userID.toString(), num);
+                    if (itemsConsumed > 0) {
+                        System.out.println("Consumed " + itemsConsumed + " items.");
                     } else {
-                        System.out.println("Item could not be consumed. Please try again.");
+                        System.out.println("Item could not be consumed.");
                     }
                     break;
                 case 4:
