@@ -33,7 +33,7 @@ public class BGCounter<K> implements Serializable {
     /**
      * Maximum allowed total count
      */
-    private final long maxValue;
+    private long maxValue;
 
     /**
      * Constructs a new BGCounter with a randomly generated instance ID
@@ -128,8 +128,8 @@ public class BGCounter<K> implements Serializable {
     public BGCounter<K> merge(BGCounter<K> other) {
         Objects.requireNonNull(other, "Cannot merge with null counter");
 
-        // Use the minimum of the two max values to ensure safety
-        long mergedMaxValue = Math.min(this.maxValue, other.maxValue);
+        // Use the maximum of the two max values to ensure safety
+        long mergedMaxValue = Math.max(this.maxValue, other.maxValue);
         BGCounter<K> mergedCounter = new BGCounter<>(this.instanceId, mergedMaxValue);
 
         // Combine nodes from both counters
@@ -153,7 +153,7 @@ public class BGCounter<K> implements Serializable {
                     ? other.payload.get(nodeId).get()
                     : 0;
 
-            mergedCounter.payload.get(nodeId).set(Math.max(thisValue, otherValue));
+            mergedCounter.payload.get(nodeId).set(thisValue + otherValue);
         }
 
         return mergedCounter;
@@ -238,6 +238,13 @@ public class BGCounter<K> implements Serializable {
      */
     public long getMaxValue() {
         return maxValue;
+    }
+
+    public void setMaxValue(long maxValue) {
+        if (maxValue < 0) {
+            throw new IllegalArgumentException("Maximum value must be non-negative");
+        }
+        this.maxValue = maxValue;
     }
 
     public static void main(String[] args) {

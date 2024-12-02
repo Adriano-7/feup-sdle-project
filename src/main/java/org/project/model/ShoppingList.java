@@ -1,35 +1,30 @@
 package org.project.model;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.UUID;
-import org.project.data_structures.LWW;
+import org.project.data_structures.LWWSet;
 
 public class ShoppingList {
     private UUID listID;
     private String name;
-    private LWW items;
-    private LocalDateTime lastModified;
+    private LWWSet items;
 
     public ShoppingList(String name) {
         this.listID = UUID.randomUUID();
         this.name = name;
-        this.items = new LWW();
-        this.lastModified = LocalDateTime.now();
+        this.items = new LWWSet();
     }
 
     public ShoppingList(UUID id, String name) {
         this.listID = id;
         this.name = name;
-        this.items = new LWW();
-        this.lastModified = LocalDateTime.now();
+        this.items = new LWWSet();
     }
 
-    public ShoppingList(UUID id, String name, LWW items) {
+    public ShoppingList(UUID id, String name, LWWSet items) {
         this.listID = id;
         this.name = name;
         this.items = items;
-        this.lastModified = LocalDateTime.now();
     }
 
     public String getID() {
@@ -40,28 +35,20 @@ public class ShoppingList {
         return name;
     }
 
-    public LWW getItems() {
+    public LWWSet getItems() {
         return items;
     }
 
-    public LocalDateTime getLastModified() {
-        return lastModified;
-    }
-
     public void addItem(String name, int quantity) {
-        this.items.add(new Item(name, quantity));
-        this.lastModified = LocalDateTime.now();
+        this.items.add(name, quantity);
     }
 
     public void removeItem(String id) {
-        Item item = this.items.get(id);
-        this.items.remove(item);
-        this.lastModified = LocalDateTime.now();
+        this.items.remove(id);
     }
 
     public long consumeItem(String id, String user, int quantity) {
-        Item item = this.items.get(id);
-        return item.consume(user, quantity);
+        return items.consumeItem(id, user, quantity);
     }
 
     @Override
