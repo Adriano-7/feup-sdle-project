@@ -51,6 +51,10 @@ public class ShoppingList {
         return items.consumeItem(id, user, quantity);
     }
 
+    public boolean hasItem(String id) {
+        return items.lookup(id);
+    }
+
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("\n>> LIST: " + name + "\n>> ID: " + listID + "\n");

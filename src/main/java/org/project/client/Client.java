@@ -77,7 +77,11 @@ public class Client {
                 case 1:
                     System.out.println("Enter the name of the item:");
                     String name = scanner.nextLine();
-                    System.out.println("Enter the quantity of the item:");
+                    if (shoppingList.hasItem(name)) {
+                        System.out.println("Item already exists in the shopping list. Target quantity will be added by:");
+                    } else {
+                        System.out.println("Enter the quantity of the item:");
+                    }
                     int quantity = scanner.nextInt();
                     scanner.nextLine();
                     shoppingList.addItem(name, quantity);
