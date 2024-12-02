@@ -2,33 +2,33 @@ package org.project.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
+import org.project.data_structures.LWW;
 
 public class ShoppingList {
     private UUID listID;
     private String name;
-    private List<Item> items;
+    private LWW items;
     private LocalDateTime lastModified;
 
     public ShoppingList(String name) {
         this.listID = UUID.randomUUID();
         this.name = name;
-        this.items = new ArrayList<>();
+        this.items = new LWW();
         this.lastModified = LocalDateTime.now();
     }
 
     public ShoppingList(UUID id, String name) {
         this.listID = id;
         this.name = name;
-        this.items = new ArrayList<>();
+        this.items = new LWW();
         this.lastModified = LocalDateTime.now();
     }
 
-    public ShoppingList(UUID id, String name, List<Item> items) {
+    public ShoppingList(UUID id, String name, LWW items) {
         this.listID = id;
         this.name = name;
-        this.items = new ArrayList<>(items);
+        this.items = items;
         this.lastModified = LocalDateTime.now();
     }
 
@@ -40,7 +40,7 @@ public class ShoppingList {
         return name;
     }
 
-    public List<Item> getItems() {
+    public LWW getItems() {
         return items;
     }
 
@@ -53,13 +53,14 @@ public class ShoppingList {
         this.lastModified = LocalDateTime.now();
     }
 
-    public void removeItem(int index) {
-        this.items.remove(index);
+    public void removeItem(String id) {
+        Item item = this.items.get(id);
+        this.items.remove(item);
         this.lastModified = LocalDateTime.now();
     }
 
-    public long consumeItem(int index, String user, int quantity) {
-        Item item = this.items.get(index);
+    public long consumeItem(String id, String user, int quantity) {
+        Item item = this.items.get(id);
         return item.consume(user, quantity);
     }
 
@@ -68,9 +69,7 @@ public class ShoppingList {
         StringBuilder s = new StringBuilder("\n>> LIST: " + name + "\n>> ID: " + listID + "\n");
         if (!items.isEmpty()) {
             s.append(">> Items:\n");
-            for (Item item : items) {
-                s.append("  >> ").append(item).append("\n");
-            }
+            s.append(items.toString());
         }
         else s.append(">> No items in the shopping list.");
         return s.append("\n").toString();

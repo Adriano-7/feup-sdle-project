@@ -3,8 +3,9 @@ import org.project.data_structures.BGCounter;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Comparator;
 
-public class Item {
+public class Item implements Comparable<Item> {
     private UUID itemID;
     private String name;
     BGCounter<String> counter;
@@ -33,6 +34,17 @@ public class Item {
     }
 
     public String toString() {
-        return "NAME: " + name + " | QUANTITY: " + counter.query() + " / " + counter.getMaxValue();
+        return "NAME: " + name + " | QUANTITY: " + counter.query() + " / " + counter.getMaxValue() + " | ID: " + itemID;
     }
+
+    public String getID() {
+        return itemID.toString();
+    }
+
+
+    @Override
+    public int compareTo(Item o) {
+        return Comparator.comparing(Item::getID).compare(this, o);
+    }
+
 }

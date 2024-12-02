@@ -48,7 +48,7 @@ public class Client {
         String name = scanner.nextLine();
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
-        localDB.saveShoppingList(shoppingList);
+        //localDB.saveShoppingList(shoppingList);
     }
 
     public void searchShoppingList() {
@@ -83,20 +83,17 @@ public class Client {
                     shoppingList.addItem(name, quantity);
                     break;
                 case 2:
-                    System.out.println("Enter the index of the item:");
-                    int index = scanner.nextInt();
-                    scanner.nextLine();
-                    shoppingList.removeItem(index);
+                    System.out.println("Enter the ID of the item:");
+                    String id = scanner.nextLine();
+                    shoppingList.removeItem(id);
                     break;
                 case 3:
-                    System.out.println("Enter the index of the item:");
-                    // get and int from the user
-                    int itemIndex = scanner.nextInt();
-                    scanner.nextLine();
+                    System.out.println("Enter the ID of the item:");
+                    String id2 = scanner.nextLine();
                     System.out.println("How many?");
                     int num = scanner.nextInt();
                     scanner.nextLine();
-                    long itemsConsumed = shoppingList.consumeItem(itemIndex, userID.toString(), num);
+                    long itemsConsumed = shoppingList.consumeItem(id2, userID.toString(), num);
                     if (itemsConsumed > 0) {
                         System.out.println("Consumed " + itemsConsumed + " items.");
                     } else {
