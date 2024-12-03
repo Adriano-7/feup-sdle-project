@@ -3,6 +3,7 @@ package org.project.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.project.data_structures.BGCounter;
 import org.project.data_structures.LWWSet;
 import org.project.model.ShoppingList;
 
@@ -13,14 +14,17 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+
 public class LocalDB {
     private final Gson gson;
     private final String filePath = "src/main/java/org/project/client/db.json";
+
     public LocalDB() {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+                .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .create();
-        //this.initializeFile();
+        this.initializeFile();
     }
 
     private void initializeFile() {
@@ -28,9 +32,9 @@ public class LocalDB {
             File file = new File(filePath);
             if (!file.exists()) {
                 file.createNewFile();
-                FileWriter writer = new FileWriter(file);
-                writer.write("{}");
-                writer.close();
+                try (FileWriter writer = new FileWriter(file)) {
+                    writer.write("{}");
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -38,37 +42,42 @@ public class LocalDB {
     }
 
     public ShoppingList getShoppingList(String id) {
-        try {
-            FileReader reader = new FileReader(filePath);
+        System.out.println("Retrieving shopping list from local database...");
+
+        try (FileReader reader = new FileReader(filePath)) {
+            // Read existing shopping lists from the file
             Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
-            reader.close();
+
+            // Return the shopping list with the given ID
             return shoppingLists.get(id);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
     public void saveShoppingList(ShoppingList shoppingList) {
         System.out.println("Saving shopping list to local database...");
 
-        // String shoppingListJson = gson.toJson(shoppingList);
         try {
-            FileReader reader = new FileReader(filePath);
-            Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
-            Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
-            reader.close();
+            File file = new File(filePath);
+            // Read existing shopping lists from the file
+            Map<String, ShoppingList> shoppingLists;
+            try (FileReader reader = new FileReader(file)) {
+                Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
+                shoppingLists = gson.fromJson(reader, type);
+            }
 
-            shoppingLists.put(shoppingList.getID(), shoppingList);
-
-            FileWriter writer = new FileWriter(filePath);
-            writer.write(gson.toJson(shoppingLists));
-            writer.close();
+            // Add the new shopping list to the existing shopping lists
+            shoppingLists.put(shoppingList.getID().toString(), shoppingList);
+            
+            // Write the updated shopping lists back to the file
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(gson.toJson(shoppingLists));
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }

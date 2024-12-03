@@ -26,11 +26,6 @@ public class BGCounter<K> implements Serializable {
     private final ConcurrentHashMap<K, AtomicLong> payload;
 
     /**
-     * Unique identifier for this counter instance
-     */
-    private final UUID instanceId;
-
-    /**
      * Maximum allowed total count
      */
     private long maxValue;
@@ -46,23 +41,11 @@ public class BGCounter<K> implements Serializable {
             throw new IllegalArgumentException("Maximum value must be non-negative");
         }
         this.payload = new ConcurrentHashMap<>();
-        this.instanceId = UUID.randomUUID();
         this.maxValue = maxValue;
     }
 
-    /**
-     * Constructs a BGCounter with a specific instance ID
-     *
-     * @param instanceId Unique identifier for this counter
-     * @param maxValue Maximum total count allowed
-     * @throws IllegalArgumentException if maxValue is negative
-     */
-    public BGCounter(UUID instanceId, long maxValue) {
-        if (maxValue < 0) {
-            throw new IllegalArgumentException("Maximum value must be non-negative");
-        }
-        this.payload = new ConcurrentHashMap<>();
-        this.instanceId = instanceId;
+    public BGCounter(long maxValue, ConcurrentHashMap<K, AtomicLong> payload){
+        this.payload = payload;
         this.maxValue = maxValue;
     }
 
@@ -130,7 +113,7 @@ public class BGCounter<K> implements Serializable {
 
         // Use the maximum of the two max values to ensure safety
         long mergedMaxValue = Math.max(this.maxValue, other.maxValue);
-        BGCounter<K> mergedCounter = new BGCounter<>(this.instanceId, mergedMaxValue);
+        BGCounter<K> mergedCounter = new BGCounter<>(mergedMaxValue);
 
         // Combine nodes from both counters
         payload.keySet().forEach(mergedCounter::addNode);
@@ -208,7 +191,6 @@ public class BGCounter<K> implements Serializable {
     @Override
     public String toString() {
         return "BGCounter{" +
-                "instanceId=" + instanceId +
                 ", maxValue=" + maxValue +
                 ", nodes=" + payload +
                 ", totalCount=" + query() +
@@ -221,7 +203,7 @@ public class BGCounter<K> implements Serializable {
      * @return Exact replica of the current counter
      */
     public BGCounter<K> clone() {
-        BGCounter<K> clonedCounter = new BGCounter<>(this.instanceId, this.maxValue);
+        BGCounter<K> clonedCounter = new BGCounter<>(this.maxValue);
 
         payload.forEach((nodeId, value) -> {
             clonedCounter.addNode(nodeId);
@@ -245,6 +227,16 @@ public class BGCounter<K> implements Serializable {
             throw new IllegalArgumentException("Maximum value must be non-negative");
         }
         this.maxValue = maxValue;
+    }
+
+    /**
+     * Getter for accessing the internal payload
+     * Note: This method exposes the internal concurrent hash map and should be used carefully
+     *
+     * @return The internal payload map
+     */
+    public ConcurrentHashMap<K, AtomicLong> getPayload() {
+        return payload;
     }
 
     public static void main(String[] args) {

@@ -14,6 +14,11 @@ public class Item {
         this.counter = new BGCounter<>(quantity);
     }
 
+    public Item(String name, BGCounter<String> counter) {
+        this.name = name;
+        this.counter = counter;
+    }
+
     public String getName() {
         return name;
     }
