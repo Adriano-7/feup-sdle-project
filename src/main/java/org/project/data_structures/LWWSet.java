@@ -6,6 +6,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.project.model.Item;
 
+import com.google.gson.Gson;
+
 /**
  * LWW (Last-Write-Wins) Element Set implementation for Conflict-free Replicated Data Types (CRDTs)
  */
@@ -20,17 +22,9 @@ CURRENT:
         "rmv-time" = 1.9182398291
         },
 }
-
-
-OLD:
-{
-    Item(sakdja, dasijdoa, asjdha) = 1.3122319312,
-    Item(sakdja, dasijdoa, asjdha) = 1.3122319312,
-    Item(sakdja, dasijdoa, asjdha) = 1.3122319312,
-}
 * */
 public class LWWSet {
-    private Map<String, Map<String,Object>> items;
+    public Map<String, Map<String,Object>> items;
     private final ReadWriteLock addLock;
     private final ReadWriteLock removeLock;
 
@@ -196,24 +190,5 @@ public class LWWSet {
 
     public long consumeItem(String id, String user, int quantity) {
         return get(id).consume(user, quantity);
-    }
-
-    public static void main(String[] args) {
-        LWWSet lww1 = new LWWSet();
-        lww1.add("apple", 5);
-        lww1.add("banana", 3);
-        lww1.add("apple", 2);
-        lww1.consumeItem("apple", "user1", 7);
-        LWWSet lww2 = new LWWSet();
-        lww2.remove("banana");
-        lww2.add("apple", 3);
-        lww2.add("banana", 2);
-        lww2.add("orange", 1);
-        lww2.consumeItem("apple", "user1", 2);
-
-        LWWSet lww3 = lww1.merge(lww2);
-        System.out.println("LWW1:\n" + lww1);
-        System.out.println("LWW2:\n" + lww2);
-        System.out.println("Merged LWW:\n" + lww3);
     }
 }

@@ -40,6 +40,7 @@ public class Client {
                     System.out.println("Invalid option. Please try again.");
             }
             client.updateShoppingList();
+            client.saveShoppingList();
         }
     }
 
@@ -48,7 +49,11 @@ public class Client {
         String name = scanner.nextLine();
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
-        //localDB.saveShoppingList(shoppingList);
+        saveShoppingList();
+    }
+
+    public void saveShoppingList(){
+        localDB.saveShoppingList(this.shoppingList);
     }
 
     public void searchShoppingList() {

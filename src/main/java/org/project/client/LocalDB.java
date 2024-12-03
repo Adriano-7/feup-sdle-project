@@ -1,7 +1,9 @@
 package org.project.client;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.project.data_structures.LWWSet;
 import org.project.model.ShoppingList;
 
 import java.io.File;
@@ -15,8 +17,10 @@ public class LocalDB {
     private final Gson gson;
     private final String filePath = "src/main/java/org/project/client/db.json";
     public LocalDB() {
-        this.gson = new Gson();
-        initializeFile();
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+                .create();
+        //this.initializeFile();
     }
 
     private void initializeFile() {
@@ -49,22 +53,22 @@ public class LocalDB {
 
     public void saveShoppingList(ShoppingList shoppingList) {
         System.out.println("Saving shopping list to local database...");
+
+        // String shoppingListJson = gson.toJson(shoppingList);
         try {
             FileReader reader = new FileReader(filePath);
-            Type type = new TypeToken<Map<String, ShoppingList>>() {}.getType();
+            Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
             reader.close();
 
-            if (shoppingLists == null) {
-                shoppingLists = new HashMap<>();
-            }
-
             shoppingLists.put(shoppingList.getID(), shoppingList);
+
             FileWriter writer = new FileWriter(filePath);
-            gson.toJson(shoppingLists, writer);
+            writer.write(gson.toJson(shoppingLists));
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 }
