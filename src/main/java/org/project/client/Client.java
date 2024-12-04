@@ -3,6 +3,7 @@ package org.project.client;
 import org.project.model.Item;
 import org.project.model.ShoppingList;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -20,31 +21,32 @@ public class Client {
         System.out.println("2. Search for an existing shopping list");
         System.out.println("3. Exit");
 
-        Scanner scanner = new Scanner(System.in);
-        int option = scanner.nextInt();
-        Client client = new Client();
-        switch (option) {
-            case 1:
-                client.createShoppingList();
-                break;
-            case 2:
-                client.searchShoppingList();
-                break;
-            case 3:
-                System.exit(0);
-                break;
-            default:
-                System.out.println("Invalid option. Please try again.");
-        }
+        try (Scanner scanner = new Scanner(System.in)) {
+            int option = scanner.nextInt();
+            Client client = new Client();
+            switch (option) {
+                case 1:
+                    client.createShoppingList();
+                    break;
+                case 2:
+                    client.searchShoppingList();
+                    break;
+                case 3:
+                    System.exit(0);
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+            }
 
-        client.updateShoppingList();
+            client.updateShoppingList();
+        }
     }
 
     public void createShoppingList() {
         System.out.println("Enter the name of the shopping list:");
         String name = scanner.nextLine();
         UUID uuid = UUID.randomUUID();
-        shoppingList = new ShoppingList(uuid, name, List.of());
+        shoppingList = new ShoppingList(uuid, name, Arrays.asList());
 
         System.out.println("Your shopping list has been successfully created with the ID: " + uuid.toString());
 

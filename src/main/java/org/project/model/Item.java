@@ -1,6 +1,4 @@
 package org.project.model;
-import java.util.List;
-import java.util.UUID;
 
 public class Item {
     private int id;

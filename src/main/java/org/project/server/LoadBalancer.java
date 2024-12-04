@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+
 public class LoadBalancer {
     private final List<String> servers;
     private final SortedMap<Integer, String> hashRing;
@@ -38,6 +39,11 @@ public class LoadBalancer {
         SortedMap<Integer, String> tailMap = hashRing.tailMap(hash);
         Integer serverHash = tailMap.isEmpty() ? hashRing.firstKey() : tailMap.firstKey();
         return hashRing.get(serverHash);
+    }
+    
+    public String processRequest(String key, String request) {
+        String serverAddress = getServer(key);
+        return "Requisição '" + request + "' processada por: " + serverAddress;
     }
 
     public List<String> getServers() {
