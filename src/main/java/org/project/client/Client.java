@@ -76,7 +76,7 @@ public class Client {
             System.out.println("4. Back to main menu");
 
             int option = scanner.nextInt();
-            scanner.nextLine(); // Consume newline left-over
+            scanner.nextLine();
             switch (option) {
                 case 1:
                     System.out.println("Enter the name of the item:");
@@ -93,11 +93,19 @@ public class Client {
                 case 2:
                     System.out.println("Enter the ID of the item:");
                     String id = scanner.nextLine();
+                    if (!shoppingList.hasItem(id)){
+                        System.out.println("Item not found in the shopping list.");
+                        break;
+                    }
                     shoppingList.removeItem(id);
                     break;
                 case 3:
                     System.out.println("Enter the ID of the item:");
                     String id2 = scanner.nextLine();
+                    if (!shoppingList.hasItem(id2)){
+                        System.out.println("Item not found in the shopping list.");
+                        break;
+                    }
                     System.out.println("How many?");
                     int num = scanner.nextInt();
                     scanner.nextLine();
