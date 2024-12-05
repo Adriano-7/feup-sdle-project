@@ -43,8 +43,8 @@ public class ShoppingListDeserializer implements JsonDeserializer<ShoppingList> 
                 // Create item info map
                 Map<String, Object> itemInfoMap = new HashMap<>();
                 itemInfoMap.put("item", item);
-                itemInfoMap.put("add-time", itemInfo.get("add-time").getAsDouble());
-                itemInfoMap.put("rmv-time", itemInfo.get("rmv-time").getAsDouble());
+                itemInfoMap.put("add-time", itemInfo.get("add-time").getAsLong());
+                itemInfoMap.put("rmv-time", itemInfo.get("rmv-time").getAsLong());
 
                 // Add to LWWSet
                 items.items.put(itemName, itemInfoMap);
