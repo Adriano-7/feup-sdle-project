@@ -6,8 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class BGCounter<K> implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class BGCounter<K>  {
     private final ConcurrentHashMap<K, AtomicLong> payload;
     private long maxValue;
 

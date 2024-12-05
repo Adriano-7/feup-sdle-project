@@ -6,13 +6,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.project.model.Item;
 
-import com.google.gson.Gson;
-
-/**
- * LWW (Last-Write-Wins) Element Set implementation for Conflict-free Replicated Data Types (CRDTs)
- */
-
-
 /*
 CURRENT:
 {
@@ -20,7 +13,7 @@ CURRENT:
         "item" =  Item(osjdkla,akksadja,masoidioap)
         "add-time" = 1.3122319312
         "rmv-time" = 1.9182398291
-        },
+    },
 }
 * */
 public class LWWSet {
@@ -45,8 +38,8 @@ public class LWWSet {
             itemInfo.put("item", item);
             addLock.writeLock().lock();
             try {
-                double currentTime = System.currentTimeMillis() / 1000.0;
-                Double existingTimestamp = (Double) itemInfo.getOrDefault("add-time", 0.0);
+                long currentTime = System.currentTimeMillis();
+                long existingTimestamp = (Long) itemInfo.getOrDefault("add-time", (long) 0);
 
                 if (existingTimestamp < currentTime) {
                     itemInfo.put("add-time", currentTime);
@@ -57,19 +50,19 @@ public class LWWSet {
                 addLock.writeLock().unlock();
             }
             items.put(name, itemInfo);
-        }else{
+        } else {
             Item item = new Item(name, quantity);
-            Map<String,Object> itemInfo = new HashMap<>();
+            Map<String, Object> itemInfo = new HashMap<>();
             itemInfo.put("item", item);
             addLock.writeLock().lock();
             try {
-                double currentTime = System.currentTimeMillis() / 1000.0;
+                long currentTime = System.currentTimeMillis();
                 itemInfo.put("add-time", currentTime);
             } catch (Exception e) {
                 System.out.println("Error in add");
             } finally {
                 addLock.writeLock().unlock();
-                itemInfo.put("rmv-time", 0.0);
+                itemInfo.put("rmv-time", (long) 0);
             }
             items.put(name, itemInfo);
         }
@@ -83,7 +76,7 @@ public class LWWSet {
                 return false;
             }
             var itemInfo = items.get(id);
-            return (Double) itemInfo.get("add-time") > (Double) itemInfo.get("rmv-time");
+            return (long) itemInfo.get("add-time") >= (long) itemInfo.get("rmv-time");
         } finally {
             removeLock.readLock().unlock();
             addLock.readLock().unlock();
@@ -93,8 +86,8 @@ public class LWWSet {
     public void remove(String id) {
         removeLock.writeLock().lock();
         try {
-            double currentTime = System.currentTimeMillis() / 1000.0;
-            Double existingTimestamp = (Double) items.get(id).getOrDefault("rmv-time", 0.0);
+            long currentTime = System.currentTimeMillis();
+            long existingTimestamp = (long) items.get(id).getOrDefault("rmv-time", (long) 0);
 
             if (existingTimestamp < currentTime) {
                 items.get(id).put("rmv-time", currentTime);
@@ -125,16 +118,16 @@ public class LWWSet {
         }
     }
 
-    public static Map<String,Object> mergeItems(Map<String,Object> item1info, Map<String,Object> item2info){
-        var result = new HashMap<String,Object>();
+    public static Map<String, Object> mergeItems(Map<String, Object> item1info, Map<String, Object> item2info) {
+        var result = new HashMap<String, Object>();
         Item item1 = (Item) item1info.get("item");
         Item item2 = (Item) item2info.get("item");
         Item mergedItem = item1.merge(item2);
         result.put("item", mergedItem);
-        double addTime1 = (Double) item1info.get("add-time");
-        double addTime2 = (Double) item2info.get("add-time");
-        double rmvTime1 = (Double) item1info.get("rmv-time");
-        double rmvTime2 = (Double) item2info.get("rmv-time");
+        long addTime1 = (long) item1info.get("add-time");
+        long addTime2 = (long) item2info.get("add-time");
+        long rmvTime1 = (long) item1info.get("rmv-time");
+        long rmvTime2 = (long) item2info.get("rmv-time");
         result.put("add-time", Math.max(addTime1, addTime2));
         result.put("rmv-time", Math.max(rmvTime1, rmvTime2));
         return result;
@@ -177,7 +170,7 @@ public class LWWSet {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (String itemID : items.keySet()) {
-            if(lookup(itemID)){
+            if (lookup(itemID)) {
                 sb.append(items.get(itemID).get("item").toString()).append("\n");
             }
         }
@@ -190,5 +183,25 @@ public class LWWSet {
 
     public long consumeItem(String id, String user, int quantity) {
         return get(id).consume(user, quantity);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        LWWSet l1 = new LWWSet();
+        l1.add("a", 7);
+        l1.add("b", 3);
+        l1.consumeItem("a", "gajo1", 7);
+        System.out.println(l1);
+
+        LWWSet l2 = new LWWSet();
+        l2.add("b", 2);
+        l2.add("a", 3);
+        l2.add("o", 1);
+        l2.consumeItem("a", "gajo2", 2);
+        System.out.println(l2);
+
+        l1.add("a", 20);
+        l1.remove("a");
+        LWWSet l3 = l1.merge(l2);
+        System.out.println(l3);
     }
 }
