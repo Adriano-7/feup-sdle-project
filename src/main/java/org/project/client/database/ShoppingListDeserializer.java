@@ -1,7 +1,6 @@
-package org.project.client;
+package org.project.client.database;
 
 import com.google.gson.*;
-import com.google.gson.reflect.TypeToken;
 import org.project.data_structures.BGCounter;
 import org.project.data_structures.LWWSet;
 import org.project.model.Item;

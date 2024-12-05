@@ -1,9 +1,8 @@
 package org.project.client;
 
-import org.project.model.Item;
+import org.project.client.database.LocalDB;
 import org.project.model.ShoppingList;
 
-import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 

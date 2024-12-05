@@ -1,7 +1,6 @@
-package org.project.client;
+package org.project.client.database;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import org.project.data_structures.LWWSet;

@@ -1,9 +1,8 @@
-package org.project.client;
+package org.project.client.database;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.project.data_structures.BGCounter;
 import org.project.data_structures.LWWSet;
 import org.project.model.ShoppingList;
 
@@ -12,12 +11,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 
 public class LocalDB {
     private final Gson gson;
-    private final String filePath = "src/main/java/org/project/client/db.json";
+    private final String filePath = "src/main/java/org/project/client/database/db.json";
 
     public LocalDB() {
         this.gson = new GsonBuilder()
