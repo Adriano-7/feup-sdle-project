@@ -1,6 +1,5 @@
 package org.project.client;
 
-import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -19,6 +18,8 @@ public class Client {
 
     public static void main(String[] args) {
         System.out.println("Welcome to the Shopping List App!");
+
+        zmq();
 
         Client client = new Client();
         Scanner scanner = new Scanner(System.in);
@@ -116,26 +117,21 @@ public class Client {
 
     }
 
-    public static void xmq(String[] args)
+    public static void zmq()
     {
         try (ZContext context = new ZContext()) {
             //  Socket to talk to server
-            System.out.println("Connecting to hello world server");
+            System.out.println("Connecting to server...");
 
             ZMQ.Socket socket = context.createSocket(SocketType.REQ);
             socket.connect("tcp://localhost:5555");
 
-            for (int requestNbr = 0; requestNbr != 10; requestNbr++) {
-                String request = "Hello";
-                System.out.println("Sending Hello " + requestNbr);
-                socket.send(request.getBytes(ZMQ.CHARSET), 0);
+            String request = "Connected with client";
+            socket.send(request.getBytes(ZMQ.CHARSET), 0);
 
-                byte[] reply = socket.recv(0);
-                System.out.println(
-                    "Received " + new String(reply, ZMQ.CHARSET) + " " +
-                    requestNbr
-                );
-            }
+            byte[] reply = socket.recv(0);
+            System.out.println(new String(reply, ZMQ.CHARSET));
+            
         }
     }
 }

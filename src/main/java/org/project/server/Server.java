@@ -15,13 +15,11 @@ public class Server
 
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] reply = socket.recv(0);
-                System.out.println(
-                    "Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]"
-                );
+                System.out.println(new String(reply, ZMQ.CHARSET));
 
                 Thread.sleep(1000); //  Do some 'work'
 
-                String response = "world";
+                String response = "Connected";
                 socket.send(response.getBytes(ZMQ.CHARSET), 0);
             }
         }
