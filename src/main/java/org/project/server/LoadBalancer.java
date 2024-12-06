@@ -1,52 +1,62 @@
 package org.project.server;
 
+import org.project.model.ShoppingList;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 
 public class LoadBalancer {
-    private final List<String> servers;
-    private final SortedMap<Integer, String> hashRing;
+    private final HashRing hashRing;
+    private final List<Server> servers;
 
-    public LoadBalancer() {
+    public LoadBalancer(int virtualNodes) {
+        hashRing = new HashRing(virtualNodes);
         servers = new ArrayList<>();
-        hashRing = new TreeMap<>();
     }
 
-    public void addServer(String serverAddress) {
-        int hash = serverAddress.hashCode();
-        hashRing.put(hash, serverAddress);
-        servers.add(serverAddress);
-        System.out.println("Servidor adicionado: " + serverAddress);
+    public void addServer(Server server) {
+        servers.add(server);
+        hashRing.addServer(server.getName());
     }
 
-    public void removeServer(String serverAddress) {
-        int hash = serverAddress.hashCode();
-        hashRing.remove(hash);
-        servers.remove(serverAddress);
-        System.out.println("Servidor removido: " + serverAddress);
+    public void removeServer(Server server) {
+        servers.remove(server);
+        hashRing.removeServer(server.getName());
     }
 
-    public String getServer(String key) {
-        if (hashRing.isEmpty()) {
-            throw new IllegalStateException("Nenhum servidor disponível no Hash Ring!");
+    public String handleRequest(String key, String request) {
+        String serverName = hashRing.getServer(key);
+        Server targetServer = servers.stream()
+                .filter(server -> server.getName().equals(serverName))
+                .findFirst()
+                .orElse(null);
+
+        if (targetServer == null) {
+            return "Error: Server not found.";
         }
 
-        int hash = key.hashCode();
-        // Search the next bigger hash in hash ring
-        SortedMap<Integer, String> tailMap = hashRing.tailMap(hash);
-        Integer serverHash = tailMap.isEmpty() ? hashRing.firstKey() : tailMap.firstKey();
-        return hashRing.get(serverHash);
-    }
-    
-    public String processRequest(String key, String request) {
-        String serverAddress = getServer(key);
-        return "Requisição '" + request + "' processada por: " + serverAddress;
+        ShoppingList shoppingList = targetServer.retrieve(key);
+
+        if (request.startsWith("CREATE:")) {
+            String name = request.substring(7);
+            ShoppingList newList = new ShoppingList(name);
+            targetServer.store(key, newList);
+            return "List created in server: " + serverName;
+        }
+
+        if (request.startsWith("ADD:")) {
+            if (shoppingList == null) {
+                return "Error: List not found.";
+            }
+
+            String[] parts = request.substring(4).split(",", 2);
+            String itemName = parts[0];
+            int quantity = Integer.parseInt(parts[1]);
+            shoppingList.addItem(itemName, quantity);
+            return "Item added to the list in server: " + serverName;
+        }
+
+        return "Operation unknown.";
     }
 
-    public List<String> getServers() {
-        return servers;
-    }
 }

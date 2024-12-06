@@ -1,23 +1,31 @@
 package org.project.server;
 
-import java.util.Map;
-import java.util.Arrays;
-import java.util.HashMap;
 import org.project.model.ShoppingList;
-import java.util.UUID;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    private final String address;
-    private final Map<String, ShoppingList> lists;
+    private final String name;
+    private final ConcurrentHashMap<String, ShoppingList> database = new ConcurrentHashMap<>();
 
-    public Server(String address) {
-        this.address = address;
-        this.lists = new HashMap<>();
+    public Server(String name) {
+        this.name = name;
     }
 
-    public String getAddress() {
-        return address;
+    public void store(String key, ShoppingList list) {
+        database.put(key, list);
     }
 
+    public ShoppingList retrieve(String key) {
+        return database.get(key);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Map<String, ShoppingList> getData() {
+        return new ConcurrentHashMap<>(database);
+    }
 }
