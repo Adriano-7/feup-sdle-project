@@ -1,6 +1,7 @@
 package org.project.server;
 
 import org.project.model.ShoppingList;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
@@ -50,7 +51,7 @@ public class LoadBalancer {
         SocketChannel client = serverSocket.accept();
         client.configureBlocking(false);
         client.register(selector, SelectionKey.OP_READ);
-        System.out.println("Cliente conectado: " + client.getRemoteAddress());
+        System.out.println("Client connected: " + client.getRemoteAddress());
     }
 
     private void handleRequest(SelectionKey key) throws IOException {
@@ -70,22 +71,35 @@ public class LoadBalancer {
         String key = message.getKey();
         String value = message.getValue();
 
-        // Lógica para distribuir mensagens usando o hash ring
         String serverId = hashRing.getServer(key);
         Server targetServer = nodes.get(serverId);
 
         if ("CREATE".equals(operation)) {
             ShoppingList newList = new ShoppingList(value);
             targetServer.store(key, newList);
-            sendResponse(client, "Lista criada: " + value);
+            replicateData(key, newList, serverId);
+            sendResponse(client, "List created: " + value);
         } else if ("ADD".equals(operation)) {
             ShoppingList list = targetServer.retrieve(key);
             if (list == null) {
-                sendResponse(client, "Erro: Lista não encontrada.");
+                sendResponse(client, "Error: List not found.");
             } else {
                 String[] parts = value.split(",", 2);
                 list.addItem(parts[0], Integer.parseInt(parts[1]));
-                sendResponse(client, "Item adicionado: " + parts[0]);
+                sendResponse(client, "Item added: " + parts[0]);
+            }
+        }
+    }
+
+    private void replicateData(String key, ShoppingList data, String primaryServerId) {
+        int replicationFactor = 2;
+        List<String> predecessors = hashRing.getPredecessors(primaryServerId, replicationFactor);
+
+        for (String predId : predecessors) {
+            Server predServer = nodes.get(predId);
+            if (predServer != null) {
+                predServer.store(key, data);
+                System.out.println("Data replicated to server: " + predServer.getName());
             }
         }
     }
@@ -100,5 +114,4 @@ public class LoadBalancer {
         hashRing.addServer(server.getName());
         System.out.println("Server added: " + server.getName());
     }
-
 }

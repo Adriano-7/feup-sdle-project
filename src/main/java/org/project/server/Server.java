@@ -1,6 +1,7 @@
 package org.project.server;
 
 import org.project.model.ShoppingList;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
@@ -45,7 +46,7 @@ public class Server {
             Selector selector = Selector.open();
             serverSocket.register(selector, SelectionKey.OP_ACCEPT);
 
-            System.out.println("Server " + name + " started in port " + port);
+            System.out.println("Server " + name + " started on port " + port);
 
             while (true) {
                 selector.select();
@@ -67,7 +68,7 @@ public class Server {
         SocketChannel clientChannel = serverSocket.accept();
         clientChannel.configureBlocking(false);
         clientChannel.register(selector, SelectionKey.OP_READ);
-        System.out.println("Client connected do the server " + name);
+        System.out.println("Client connected to server " + name);
     }
 
     private void handleRequest(SelectionKey key) throws IOException {
@@ -76,7 +77,6 @@ public class Server {
             Message message = Message.read(clientChannel);
             if (message == null) return;
 
-            System.out.println("Server " + name + " received the message: " + message);
             processMessage(clientChannel, message);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -99,7 +99,7 @@ public class Server {
             } else {
                 String[] parts = value.split(",", 2);
                 list.addItem(parts[0], Integer.parseInt(parts[1]));
-                sendResponse(clientChannel, "Item selected: " + parts[0]);
+                sendResponse(clientChannel, "Item added: " + parts[0]);
             }
         }
     }

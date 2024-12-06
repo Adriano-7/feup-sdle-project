@@ -34,6 +34,24 @@ public class HashRing {
         return ring.get(hash);
     }
 
+    public List<String> getPredecessors(String serverId, int replicationFactor) {
+        List<String> predecessors = new ArrayList<>();
+        NavigableMap<Integer, String> reversedRing = ((TreeMap<Integer, String>) ring).descendingMap();
+
+        for (Map.Entry<Integer, String> entry : reversedRing.entrySet()) {
+            if (entry.getValue().equals(serverId)) {
+                int count = 0;
+                for (Map.Entry<Integer, String> pred : reversedRing.tailMap(entry.getKey(), false).entrySet()) {
+                    predecessors.add(pred.getValue());
+                    count++;
+                    if (count == replicationFactor) break;
+                }
+                break;
+            }
+        }
+        return predecessors;
+    }
+
     private int hash(String key) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
