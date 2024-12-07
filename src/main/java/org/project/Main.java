@@ -12,7 +12,6 @@ public class Main {
 
         switch (args[0].toLowerCase()) {
             case "server" -> {
-                System.out.println("Starting server...");
                 try {
                     Server.main(new String[]{});
                 } catch (Exception e) {
@@ -22,8 +21,7 @@ public class Main {
             }
 
             case "client" -> {
-                System.out.println("Starting client...");
-                Client.main(new String[]{}); // Call the client's main method
+                Client.main(new String[]{});
             }
 
             default -> {
