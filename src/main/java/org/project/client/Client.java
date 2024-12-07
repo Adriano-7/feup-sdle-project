@@ -5,12 +5,24 @@ import org.project.model.ShoppingList;
 
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Client {
     private Scanner scanner = new Scanner(System.in);
     private LocalDB localDB = new LocalDB();
     private ShoppingList shoppingList = null;
     private final UUID userID = UUID.randomUUID();
+
+
+    private CommunicationHandler serverHandler;
+    private ExecutorService executorService;
+
+    public Client() {
+        serverHandler = new CommunicationHandler("tcp://localhost:5555");
+        executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(serverHandler);
+    }
 
 
     public static void main(String[] args) {
@@ -58,13 +70,32 @@ public class Client {
     public void searchShoppingList() {
         System.out.println("Enter the ID of the shopping list:");
         String id = scanner.nextLine();
-        shoppingList = localDB.getShoppingList(id);
-        if (shoppingList != null) {
-            System.out.println("Shopping List found!");
-        } else {
-            System.out.println("Shopping List not found. Please try again.");
+
+        try {
+            shoppingList = localDB.getShoppingList(id);
+
+            if (shoppingList != null) {
+                System.out.println("Shopping List found in local database!");
+            } else {
+                serverHandler.readShoppingList(id);
+                String response = serverHandler.getResponse();
+
+                if (!response.equals("Shopping list not found.")) {
+                    shoppingList = serverHandler.parseShoppingListResponse(response);
+                    if (shoppingList != null) {
+                        System.out.println("Shopping List found on server!");
+                        localDB.saveShoppingList(shoppingList);
+                    }
+                } else {
+                    System.out.println("Shopping List not found. Please try again.");
+                }
+            }
+        } catch (InterruptedException e) {
+            System.err.println("Search operation was interrupted.");
+            Thread.currentThread().interrupt();
         }
     }
+
 
     public void updateShoppingList() {
         while (true) {
@@ -76,7 +107,7 @@ public class Client {
             System.out.println("4. Back to main menu");
 
             int option = scanner.nextInt();
-            scanner.nextLine(); // Consume newline left-over
+            scanner.nextLine();
             switch (option) {
                 case 1:
                     System.out.println("Enter the name of the item:");
