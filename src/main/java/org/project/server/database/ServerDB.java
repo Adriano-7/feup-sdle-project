@@ -52,7 +52,7 @@ public class ServerDB {
         return null;
     }
 
-    public void saveShoppingList(ShoppingList shoppingList) {
+    public static void saveShoppingList(ShoppingList shoppingList) {
         System.out.println("Saving shopping list to local database...");
 
         try {

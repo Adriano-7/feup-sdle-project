@@ -12,76 +12,88 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    private static Map<String, ShoppingList> shoppingLists;
-    private static Gson gson;
+    private static final int PORT = 5555;
+    private final Map<String, ShoppingList> shoppingLists;
+    private final Gson gson;
 
-    public static void main(String[] args) {
-        shoppingLists = ServerDB.loadShoppingLists();
-        gson = new GsonBuilder()
+    public Server() {
+        this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists());
+        this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
+                .setPrettyPrinting()
                 .create();
+    }
 
-        System.out.println("Starting server...");
+    public void start() {
+        System.out.println("Starting Server on port " + PORT);
 
         try (ZContext context = new ZContext()) {
             ZMQ.Socket socket = context.createSocket(SocketType.REP);
-            socket.bind("tcp://*:5555");
+            socket.bind("tcp://*:" + PORT);
 
             while (!Thread.currentThread().isInterrupted()) {
-                byte[] reply = socket.recv(0);
-                String response = processCommand(new String(reply, ZMQ.CHARSET));
-                socket.send(response.getBytes(ZMQ.CHARSET), 0);
+                try {
+                    byte[] request = socket.recv(0);
+                    String response = processRequest(new String(request, ZMQ.CHARSET));
+                    socket.send(response.getBytes(ZMQ.CHARSET), 0);
+                } catch (Exception e) {
+                    System.out.println("Error processing request: " + e.getMessage());
+                    socket.send("error/server_error".getBytes(ZMQ.CHARSET), 0);
+                }
             }
         }
     }
 
-    /*
-    Server commands:
-    - read/<id>: Read the shopping list with the given ID.
-    - write/<shoppingList>: Merge the shopping list received with the server's version, update it, and return the updated shopping list.
-    */
-    private static String processCommand(String message) {
-        if (message.startsWith("read/")) {
-            return handleReadCommand(message.substring(5));
+    private String processRequest(String message) {
+        try {
+            if (message.startsWith("read/")) {
+                return handleReadCommand(message.substring(5));
+            }
+            if (message.startsWith("write/")) {
+                return handleWriteCommand(message.substring(6));
+            }
+            throw new IllegalArgumentException("Unknown command");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Request processing error: " + e.getMessage());
+            return "error/" + e.getMessage().toLowerCase().replace(" ", "_");
         }
-        if (message.startsWith("write/")) {
-            return handleWriteCommand(message.substring(6));
-        }
-
-        return "Unknown command.";
     }
 
-    private static String handleReadCommand(String id) {
-        System.out.println("Handling read command for shopping list with ID: " + id);
+    private String handleReadCommand(String id) {
+        System.out.println("Reading shopping list: " + id);
 
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
-            System.out.println("Shopping list not found.");
-            return "error/list_not_found";
-        } else {
-            return gson.toJson(shoppingList);
+            throw new IllegalArgumentException("List Not Found");
+        }
+
+        return gson.toJson(shoppingList);
+    }
+
+    private String handleWriteCommand(String message) {
+        try {
+            ShoppingList incomingList = gson.fromJson(message, ShoppingList.class);
+            String id = incomingList.getID().toString();
+
+            shoppingLists.compute(id, (key, existingList) ->
+                    existingList == null ? incomingList : existingList.merge(incomingList)
+            );
+
+            ShoppingList updatedList = shoppingLists.get(id);
+
+            ServerDB.saveShoppingList(updatedList);
+
+            return gson.toJson(updatedList);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid Shopping List Data");
         }
     }
 
-    private static String handleWriteCommand(String message) {
-        String[] parts = message.split("/");
-        String shoppingListJson = parts[0];
-        ShoppingList shoppingList = gson.fromJson(shoppingListJson, ShoppingList.class);
-        String id = shoppingList.getID().toString();
-
-        System.out.println("Handling write command for shopping list with ID: " + id);
-
-        ShoppingList serverShoppingList = shoppingLists.get(id);
-        if (serverShoppingList == null) {
-            shoppingLists.put(id, shoppingList);
-        }
-        else {
-            shoppingList = serverShoppingList.merge(shoppingList);
-            shoppingLists.put(id, shoppingList);
-        }
-        return gson.toJson(shoppingList);
+    public static void main(String[] args) {
+        new Server().start();
     }
 }
