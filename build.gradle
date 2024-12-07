@@ -19,7 +19,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'org.slf4j:slf4j-api:2.0.7'
     implementation 'org.slf4j:slf4j-simple:2.0.7'
-    implementation 'org.zeromq:jeromq:0.5.2'
+    implementation 'org.zeromq:jeromq:0.5.3'
 }
 
 tasks.withType(JavaExec) {
