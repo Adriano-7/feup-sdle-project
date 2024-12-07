@@ -1,4 +1,4 @@
-package org.project.client.database;
+package org.project.server.database;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,17 +15,12 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-public class LocalDB {
-    private final Gson gson;
-    private final String filePath = "src/main/java/org/project/client/database/db.json";
-
-    public LocalDB() {
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
-                .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
-                .create();
-        this.initializeFile();
-    }
+public class ServerDB {
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+            .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
+            .create();
+    private static final String filePath = "src/main/java/org/project/server/database/db.json";
 
     private void initializeFile() {
         try {
@@ -41,8 +36,8 @@ public class LocalDB {
         }
     }
 
-    public ShoppingList getShoppingList(String id) {
-        System.out.println("Retrieving shopping list from local database...");
+    public static Map<String, ShoppingList> loadShoppingLists() {
+        System.out.println("Loading shopping lists from local database...");
 
         try (FileReader reader = new FileReader(filePath)) {
             // Read existing shopping lists from the file
@@ -50,7 +45,7 @@ public class LocalDB {
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
 
             // Return the shopping list with the given ID
-            return shoppingLists.get(id);
+            return shoppingLists;
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,4 +1,4 @@
-package org.project.client.database;
+package org.project.data_structures;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
