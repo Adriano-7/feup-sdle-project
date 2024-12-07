@@ -9,18 +9,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Client {
-    private Scanner scanner = new Scanner(System.in);
-    private LocalDB localDB = new LocalDB();
+    private final Scanner scanner = new Scanner(System.in);
+    private final LocalDB localDB = new LocalDB();
     private ShoppingList shoppingList = null;
     private final UUID userID = UUID.randomUUID();
 
 
-    private CommunicationHandler serverHandler;
-    private ExecutorService executorService;
+    private final CommunicationHandler serverHandler;
 
     public Client() {
         serverHandler = new CommunicationHandler("tcp://localhost:5555");
-        executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(serverHandler);
     }
 
