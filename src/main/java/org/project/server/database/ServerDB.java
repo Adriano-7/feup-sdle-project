@@ -22,29 +22,13 @@ public class ServerDB {
             .create();
     private static final String filePath = "src/main/java/org/project/server/database/db.json";
 
-    private void initializeFile() {
-        try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                file.createNewFile();
-                try (FileWriter writer = new FileWriter(file)) {
-                    writer.write("{}");
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static Map<String, ShoppingList> loadShoppingLists() {
         System.out.println("Loading shopping lists from local database...");
 
         try (FileReader reader = new FileReader(filePath)) {
-            // Read existing shopping lists from the file
             Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
 
-            // Return the shopping list with the given ID
             return shoppingLists;
         } catch (IOException e) {
             e.printStackTrace();
@@ -57,17 +41,14 @@ public class ServerDB {
 
         try {
             File file = new File(filePath);
-            // Read existing shopping lists from the file
             Map<String, ShoppingList> shoppingLists;
             try (FileReader reader = new FileReader(file)) {
                 Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
                 shoppingLists = gson.fromJson(reader, type);
             }
 
-            // Add the new shopping list to the existing shopping lists
             shoppingLists.put(shoppingList.getID().toString(), shoppingList);
             
-            // Write the updated shopping lists back to the file
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(gson.toJson(shoppingLists));
             }

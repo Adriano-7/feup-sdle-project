@@ -74,10 +74,8 @@ public class LocalDB {
                 shoppingLists = new HashMap<>();
             }
 
-            // Add the new shopping list to the existing shopping lists
             shoppingLists.put(shoppingList.getID().toString(), shoppingList);
 
-            // Write the updated shopping lists back to the file
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(gson.toJson(shoppingLists));
             }
