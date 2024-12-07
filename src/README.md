@@ -1,4 +1,4 @@
-#How to run on the command line:
+# How to run on the command line:
 
 - Left-click on the build.gradle file and click Reload Projects
 - In folder g11 and run:
