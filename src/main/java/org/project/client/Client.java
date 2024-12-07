@@ -24,7 +24,6 @@ public class Client {
         executorService.submit(serverHandler);
     }
 
-
     public static void main(String[] args) {
         System.out.println("Welcome to the Shopping List App!");
 
@@ -68,31 +67,34 @@ public class Client {
     }
 
     public void searchShoppingList() {
-        System.out.println("Enter the ID of the shopping list:");
-        String id = scanner.nextLine();
+        while (true) {
+            System.out.println("Enter the ID of the shopping list:");
+            String id = scanner.nextLine();
 
-        try {
-            shoppingList = localDB.getShoppingList(id);
+            try {
+                shoppingList = localDB.getShoppingList(id);
 
-            if (shoppingList != null) {
-                System.out.println("Shopping List found in local database!");
-            } else {
-                serverHandler.readShoppingList(id);
-                String response = serverHandler.getResponse();
-
-                if (!response.equals("Shopping list not found.")) {
-                    shoppingList = serverHandler.parseShoppingListResponse(response);
-                    if (shoppingList != null) {
-                        System.out.println("Shopping List found on server!");
-                        localDB.saveShoppingList(shoppingList);
-                    }
+                if (shoppingList != null) {
+                    System.out.println("Shopping List found in local database!");
+                    break;
                 } else {
-                    System.out.println("Shopping List not found. Please try again.");
+                    serverHandler.readShoppingList(id);
+                    String response = serverHandler.getResponse();
+                    if (!response.equals("error/list_not_found")) {
+                        shoppingList = serverHandler.parseShoppingListResponse(response);
+                        if (shoppingList != null) {
+                            System.out.println("Shopping List found on server!");
+                            localDB.saveShoppingList(shoppingList);
+                            break;
+                        }
+                    } else {
+                        System.out.println("Shopping List not found. Please try again.");
+                    }
                 }
+            } catch (InterruptedException e) {
+                System.err.println("Search operation was interrupted.");
+                Thread.currentThread().interrupt();
             }
-        } catch (InterruptedException e) {
-            System.err.println("Search operation was interrupted.");
-            Thread.currentThread().interrupt();
         }
     }
 

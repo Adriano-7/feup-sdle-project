@@ -60,7 +60,7 @@ public class Server {
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
             System.out.println("Shopping list not found.");
-            return "Shopping list not found.";
+            return "error/list_not_found";
         } else {
             return gson.toJson(shoppingList);
         }
