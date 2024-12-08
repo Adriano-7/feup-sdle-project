@@ -218,8 +218,11 @@ public class Client {
                     }
                     break;
                 case 4:
-                    deleteShoppingList();
-                    return;
+                    if(getYesNoFromUser("Are you sure? List will be deleted permanently.")) {
+                        deleteShoppingList();
+                        return;
+                    }
+                    break;
                 case 5:
                     if (communicationHandler.isServerRunning()) {
                         synchronizeShoppingList();
@@ -294,6 +297,21 @@ public class Client {
             } catch (InputMismatchException e) {
                 System.out.println("Invalid input. Please enter a valid integer.");
                 scanner.next();
+            }
+        }
+    }
+
+    private boolean getYesNoFromUser(String prompt) {
+        while (true) {
+            System.out.println(prompt + " (y/n)");
+            String input = scanner.nextLine().trim().toLowerCase();
+
+            if (input.equals("y")) {
+                return true;
+            } else if (input.equals("n")) {
+                return false;
+            } else {
+                System.out.println("Invalid input. Please enter 'y' or 'n'.");
             }
         }
     }
