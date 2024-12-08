@@ -85,7 +85,7 @@ public class BGCounter<K> implements Serializable {
                     ? other.payload.get(nodeId).get()
                     : 0;
 
-            mergedCounter.payload.get(nodeId).set(thisValue + otherValue);
+            mergedCounter.payload.get(nodeId).set(Math.max(thisValue, otherValue));
         }
 
         return mergedCounter;

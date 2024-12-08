@@ -79,14 +79,15 @@ public class Server {
             ShoppingList incomingList = gson.fromJson(message, ShoppingList.class);
             String id = incomingList.getID().toString();
 
-            shoppingLists.compute(id, (key, existingList) ->
-                    existingList == null ? incomingList : existingList.merge(incomingList)
-            );
-
-            ShoppingList updatedList = shoppingLists.get(id);
-
+            ShoppingList existingList = shoppingLists.get(id);
+            if (existingList == null){
+                shoppingLists.put(id, incomingList);
+                ServerDB.saveShoppingList(incomingList);
+                return gson.toJson(incomingList);
+            }
+            ShoppingList updatedList = existingList.merge(incomingList);
             ServerDB.saveShoppingList(updatedList);
-
+            shoppingLists.put(id, updatedList);
             return gson.toJson(updatedList);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid Shopping List Data");
