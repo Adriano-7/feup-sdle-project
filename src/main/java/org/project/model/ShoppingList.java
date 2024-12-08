@@ -27,9 +27,7 @@ public class ShoppingList {
         this.items = items;
     }
 
-    public UUID getID() {
-        return listID;
-    }
+    public UUID getID() {return listID;}
 
     public String getName() {
         return name;

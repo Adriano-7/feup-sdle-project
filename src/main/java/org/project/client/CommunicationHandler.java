@@ -28,30 +28,20 @@ public class CommunicationHandler implements Runnable {
         this.serverAddress = serverAddress;
         this.commandQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
-        this.isRunning = new AtomicBoolean(true);
+        this.isRunning = new AtomicBoolean(false);
 
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .create();
     }
-
-    public void readShoppingList(String listId) throws InterruptedException {
-        commandQueue.put(READ_COMMAND + "/" + listId);
-    }
-    public void writeShoppingList(ShoppingList shoppingList) throws InterruptedException {
-        String shoppingListJson = gson.toJson(shoppingList);
-        commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
-    }
-    public String getResponse() throws InterruptedException {
-        return responseQueue.take();
-    }
-
     @Override
     public void run() {
         try (ZContext context = new ZContext()) {
             ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
             socket.connect(serverAddress);
+
+            isRunning.set(true);
 
             while (isRunning.get()) {
                 String command = commandQueue.take();
@@ -68,6 +58,16 @@ public class CommunicationHandler implements Runnable {
             System.err.println("Server communication thread interrupted");
         }
     }
+    public void readShoppingList(String listId) throws InterruptedException {
+        commandQueue.put(READ_COMMAND + "/" + listId);
+    }
+    public void writeShoppingList(ShoppingList shoppingList) throws InterruptedException {
+        String shoppingListJson = gson.toJson(shoppingList);
+        commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
+    }
+    public String getResponse() throws InterruptedException {
+        return responseQueue.take();
+    }
 
     public void stop() {
         isRunning.set(false);
@@ -80,5 +80,9 @@ public class CommunicationHandler implements Runnable {
             System.err.println("Error parsing shopping list: " + e.getMessage());
             return null;
         }
+    }
+
+    public boolean isServerRunning() {
+        return isRunning.get();
     }
 }

@@ -13,8 +13,6 @@ public class Client {
     private final LocalDB localDB = new LocalDB();
     private ShoppingList shoppingList = null;
     private final UUID userID = UUID.randomUUID();
-
-
     private final CommunicationHandler serverHandler;
 
     public Client() {
@@ -24,11 +22,14 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        System.out.println("Welcome to the Shopping List App!");
+        System.out.println("\n================== Shopping List App ==================\n");
 
         Client client = new Client();
+
         Scanner scanner = new Scanner(System.in);
         while (true){
+            System.out.println(  "                Server Status: " + (client.serverHandler.isServerRunning() ? "Online" : "Offline") + "\n");
+
             System.out.println("\nSelect an option:");
             System.out.println("1. Create a new shopping list");
             System.out.println("2. Search for an existing shopping list");
@@ -87,7 +88,7 @@ public class Client {
                             break;
                         }
                     } else {
-                        System.out.println("Shopping List not found. Please try again.");
+                        System.out.println("Shopping List not found. Please try again.\n");
                     }
                 }
             } catch (InterruptedException e) {
@@ -97,14 +98,17 @@ public class Client {
         }
     }
 
-
     public void updateShoppingList() {
         while (true) {
+            System.out.println("\n================== Shopping List App ==================\n");
+            System.out.println(  "                Server Status: " + (serverHandler.isServerRunning() ? "Online" : "Offline") + "\n");
+
             System.out.println(shoppingList);
             System.out.println("Select an option:");
             System.out.println("1. Add item to shopping list");
             System.out.println("2. Remove item from shopping list");
             System.out.println("3. Consume item from shopping list");
+
             System.out.println("4. Back to main menu");
 
             int option = scanner.nextInt();

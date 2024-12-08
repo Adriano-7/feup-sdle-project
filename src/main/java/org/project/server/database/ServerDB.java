@@ -27,9 +27,8 @@ public class ServerDB {
 
         try (FileReader reader = new FileReader(filePath)) {
             Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
-            Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
 
-            return shoppingLists;
+            return gson.fromJson(reader, type);
         } catch (IOException e) {
             e.printStackTrace();
         }
