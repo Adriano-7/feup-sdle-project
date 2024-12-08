@@ -50,6 +50,9 @@ public class Server {
 
     private String processRequest(String message) {
         try {
+            if (message.equals("ping")) {
+                return "pong";
+            }
             if (message.startsWith("read/")) {
                 return handleReadCommand(message.substring(5));
             }

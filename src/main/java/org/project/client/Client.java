@@ -52,6 +52,7 @@ public class Client {
                     System.out.println("Invalid option. Please try again.");
             }
             client.updateShoppingList();
+            client.synchronizeShoppingList();
             client.saveShoppingList();
         }
     }
@@ -64,7 +65,6 @@ public class Client {
     }
 
     public void saveShoppingList() {
-        synchronizeShoppingList();
         localDB.saveShoppingList(this.shoppingList);
     }
 
