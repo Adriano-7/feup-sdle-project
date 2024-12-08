@@ -61,6 +61,7 @@ public class Client {
         String name = getStringFromUser("Enter the name of the shopping list:");
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
+        synchronizeShoppingList();
         saveShoppingList();
     }
 
@@ -94,10 +95,16 @@ public class Client {
             try {
                 shoppingList = localDB.getShoppingList(id);
 
-                if (shoppingList != null) {
+                if (shoppingList != null && communicationHandler.isServerRunning()) {
+                    synchronizeShoppingList();
+                    System.out.println("Shopping List found in local database and synchronized with server!");
+                    break;
+                }
+                else if (shoppingList != null) {
                     System.out.println("Shopping List found in local database!");
                     break;
-                } else {
+                }
+                else {
                     communicationHandler.readShoppingList(id);
                     String response = communicationHandler.getResponse();
                     if (!response.equals("error/list_not_found")) {
