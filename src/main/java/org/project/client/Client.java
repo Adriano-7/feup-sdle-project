@@ -13,34 +13,31 @@ public class Client {
     private final LocalDB localDB;
     private ShoppingList shoppingList = null;
     private final String username;
-    private final CommunicationHandler serverHandler;
+    private final CommunicationHandler communicationHandler;
 
     public Client(String username) {
         this.username = username;
         this.localDB = new LocalDB(username);
-        serverHandler = new CommunicationHandler("tcp://localhost:5555");
+        communicationHandler = new CommunicationHandler("tcp://localhost:5555");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(serverHandler);
+        executorService.submit(communicationHandler);
     }
 
     public static void main(String[] args) {
-        System.out.println("\n================== Shopping List App ==================\n");
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Enter your username:");
-        String username = scanner.nextLine();
+        String username = getStringFromUser("Enter your username:");
 
         Client client = new Client(username);
 
         while (true){
-            System.out.println(  "                Server Status: " + (client.serverHandler.isServerRunning() ? "Online" : "Offline") + "\n");
+            System.out.println("\n================== Shopping List App ==================\n");
+            System.out.println(  "                Server Status: " + (client.communicationHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
             System.out.println("\nSelect an option:");
             System.out.println("1. Create a new shopping list");
             System.out.println("2. Search for an existing shopping list");
             System.out.println("3. Exit");
 
-            int option = scanner.nextInt();
+            int option = client.getIntFromUser("Enter your choice:");
             switch (option) {
                 case 1:
                     client.createShoppingList();
@@ -60,23 +57,23 @@ public class Client {
     }
 
     public void createShoppingList() {
-        System.out.println("Enter the name of the shopping list:");
-        String name = scanner.nextLine();
+        String name = getStringFromUser("Enter the name of the shopping list:");
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
         saveShoppingList();
     }
 
     public void saveShoppingList() {
+        //TODO: If server is online, synchronize the shopping list with the server
         localDB.saveShoppingList(this.shoppingList);
     }
 
     public void synchronizeShoppingList() {
-        if (serverHandler.isServerRunning()) {
+        if (communicationHandler.isServerRunning()) {
             try {
-                serverHandler.writeShoppingList(this.shoppingList);
-                String response = serverHandler.getResponse();
-                ShoppingList serverList = serverHandler.parseShoppingListResponse(response);
+                communicationHandler.writeShoppingList(this.shoppingList);
+                String response = communicationHandler.getResponse();
+                ShoppingList serverList = communicationHandler.parseShoppingListResponse(response);
                 if (serverList != null) {
                     System.out.println("Shopping list synchronized with server successfully!");
                     this.shoppingList = serverList;
@@ -92,8 +89,7 @@ public class Client {
 
     public void searchShoppingList() {
         while (true) {
-            System.out.println("Enter the ID of the shopping list:");
-            String id = scanner.nextLine();
+            String id = getShoppingListIdFromUser();
 
             try {
                 shoppingList = localDB.getShoppingList(id);
@@ -102,10 +98,10 @@ public class Client {
                     System.out.println("Shopping List found in local database!");
                     break;
                 } else {
-                    serverHandler.readShoppingList(id);
-                    String response = serverHandler.getResponse();
+                    communicationHandler.readShoppingList(id);
+                    String response = communicationHandler.getResponse();
                     if (!response.equals("error/list_not_found")) {
-                        shoppingList = serverHandler.parseShoppingListResponse(response);
+                        shoppingList = communicationHandler.parseShoppingListResponse(response);
                         if (shoppingList != null) {
                             System.out.println("Shopping List found on server!");
                             localDB.saveShoppingList(shoppingList);
@@ -125,14 +121,14 @@ public class Client {
     public void updateShoppingList() {
         while (true) {
             System.out.println("\n================== Shopping List App ==================\n");
-            System.out.println(  "                Server Status: " + (serverHandler.isServerRunning() ? "Online" : "Offline") + "\n");
+            System.out.println(  "                Server Status: " + (communicationHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
             System.out.println(shoppingList);
             System.out.println("Select an option:");
             System.out.println("1. Add item to shopping list");
             System.out.println("2. Remove item from shopping list");
             System.out.println("3. Consume item from shopping list");
-            if (serverHandler.isServerRunning()) {
+            if (communicationHandler.isServerRunning()) {
                 System.out.println("4. Synchronize shopping list with server");
                 System.out.println("5. Back");
             }
@@ -142,29 +138,28 @@ public class Client {
 
 
             int option = getIntFromUser("Enter your choice:");
+            String name;
             switch (option) {
                 case 1:
-                    System.out.println("Enter the name of the item:");
-                    String name = scanner.nextLine();
+                    name = getStringFromUser("Enter the name of the item:");
                     int quantity;
                     if (shoppingList.hasItem(name)) {
                         System.out.println("Item already exists in the shopping list.");
                         quantity = getIntFromUser("Target quantity will be added by:");
                     } else {
+                        System.out.println("Item does not exist in the shopping list. Adding new item.");
                         quantity = getIntFromUser("Enter the quantity:");
                     }
                     shoppingList.addItem(name, quantity);
                     break;
                 case 2:
-                    System.out.println("Enter the name of the item:");
-                    String id = scanner.nextLine();
-                    shoppingList.removeItem(id);
+                    name = getStringFromUser("Enter the name of the item:");
+                    shoppingList.removeItem(name);
                     break;
                 case 3:
-                    System.out.println("Enter the name of the item:");
-                    String id2 = scanner.nextLine();
+                    name = getStringFromUser("Enter the name of the item:");
                     int num = getIntFromUser("How many:");
-                    long itemsConsumed = shoppingList.consumeItem(id2, username, num);
+                    long itemsConsumed = shoppingList.consumeItem(name, username, num);
                     if (itemsConsumed > 0) {
                         System.out.println("Consumed " + itemsConsumed + " items.");
                     } else {
@@ -172,7 +167,7 @@ public class Client {
                     }
                     break;
                 case 4:
-                    if (serverHandler.isServerRunning()) {
+                    if (communicationHandler.isServerRunning()) {
                         synchronizeShoppingList();
                         break;
                     }
@@ -184,6 +179,54 @@ public class Client {
                 default:
                     System.out.println("Invalid option. Please try again.");
             }
+        }
+    }
+
+    private static String getStringFromUser(String prompt) {
+        Scanner scanner = new Scanner(System.in);
+        String input;
+
+        while (true) {
+            System.out.println(prompt);
+            input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+                continue;
+            }
+
+            if (input.matches("^[0-9].*")) {
+                System.out.println("Input cannot start with a number. Please try again.");
+                continue;
+            }
+
+            if (!input.matches("^[a-zA-Z0-9_]+$")) {
+                System.out.println("Input can only contain letters, numbers, and underscores. Please try again.");
+                continue;
+            }
+
+            return input;
+        }
+    }
+    private String getShoppingListIdFromUser() {
+        Scanner scanner = new Scanner(System.in);
+        String input;
+
+        while (true) {
+            System.out.println("Enter the ID of the shopping list:");
+            input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Input cannot be empty. Please try again.");
+                continue;
+            }
+
+            if (!input.matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")) {
+                System.out.println("Input must be a valid UUID. Please try again.");
+                continue;
+            }
+
+            return input;
         }
     }
 
