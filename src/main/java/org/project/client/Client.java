@@ -62,8 +62,27 @@ public class Client {
         saveShoppingList();
     }
 
-    public void saveShoppingList(){
+    public void saveShoppingList() {
         localDB.saveShoppingList(this.shoppingList);
+    }
+
+    public void synchronizeShoppingList() {
+        if (serverHandler.isServerRunning()) {
+            try {
+                serverHandler.writeShoppingList(this.shoppingList);
+                String response = serverHandler.getResponse();
+                ShoppingList serverList = serverHandler.parseShoppingListResponse(response);
+                if (serverList != null) {
+                    System.out.println("Shopping list synchronized with server successfully!");
+                    this.shoppingList = serverList;
+                }
+            } catch (InterruptedException e) {
+                System.err.println("Failed to synchronize with server: " + e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            System.out.println("Server is offline. Cannot synchronize shopping list.");
+        }
     }
 
     public void searchShoppingList() {
@@ -108,8 +127,14 @@ public class Client {
             System.out.println("1. Add item to shopping list");
             System.out.println("2. Remove item from shopping list");
             System.out.println("3. Consume item from shopping list");
+            if (serverHandler.isServerRunning()) {
+                System.out.println("4. Synchronize shopping list with server");
+                System.out.println("5. Back");
+            }
+            else {
+                System.out.println("4. Back");
+            }
 
-            System.out.println("4. Back to main menu");
 
             int option = scanner.nextInt();
             scanner.nextLine();
@@ -127,12 +152,12 @@ public class Client {
                     shoppingList.addItem(name, quantity);
                     break;
                 case 2:
-                    System.out.println("Enter the ID of the item:");
+                    System.out.println("Enter the name of the item:");
                     String id = scanner.nextLine();
                     shoppingList.removeItem(id);
                     break;
                 case 3:
-                    System.out.println("Enter the ID of the item:");
+                    System.out.println("Enter the name of the item:");
                     String id2 = scanner.nextLine();
                     System.out.println("How many?");
                     int num = scanner.nextInt();
@@ -145,6 +170,13 @@ public class Client {
                     }
                     break;
                 case 4:
+                    if (serverHandler.isServerRunning()) {
+                        synchronizeShoppingList();
+                    }
+                    else {
+                        return;
+                    }
+                case 5:
                     return;
                 default:
                     System.out.println("Invalid option. Please try again.");
