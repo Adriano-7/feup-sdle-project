@@ -18,13 +18,14 @@ import java.util.Map;
 
 public class LocalDB {
     private final Gson gson;
-    private final String filePath = "src/main/java/org/project/client/database/db.json";
+    private final String filePath;
 
-    public LocalDB() {
+    public LocalDB(String username) {
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .create();
+        this.filePath = "src/main/java/org/project/client/database/storage/" + username + ".json";
         this.initializeFile();
     }
 
@@ -32,7 +33,7 @@ public class LocalDB {
         try {
             File file = new File(filePath);
             if (!file.exists()) {
-                file.createNewFile();
+                file.getParentFile().mkdirs();
                 try (FileWriter writer = new FileWriter(file)) {
                     writer.write("{}");
                 }

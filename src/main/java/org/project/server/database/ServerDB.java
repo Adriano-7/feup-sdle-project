@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ServerDB {
@@ -25,14 +26,19 @@ public class ServerDB {
     public static Map<String, ShoppingList> loadShoppingLists() {
         System.out.println("Loading shopping lists from local database...");
 
-        try (FileReader reader = new FileReader(filePath)) {
-            Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
+        File file = new File(filePath);
+        if (file.length() == 0) {
+            return new HashMap<>();
+        }
 
+        try (FileReader reader = new FileReader(file)) {
+            Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
             return gson.fromJson(reader, type);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+
+        return new HashMap<>();
     }
 
     public static void saveShoppingList(ShoppingList shoppingList) {
@@ -41,13 +47,18 @@ public class ServerDB {
         try {
             File file = new File(filePath);
             Map<String, ShoppingList> shoppingLists;
-            try (FileReader reader = new FileReader(file)) {
-                Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
-                shoppingLists = gson.fromJson(reader, type);
+
+            if (file.length() == 0) {
+                shoppingLists = new HashMap<>();
+            } else {
+                try (FileReader reader = new FileReader(file)) {
+                    Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
+                    shoppingLists = gson.fromJson(reader, type);
+                }
             }
 
             shoppingLists.put(shoppingList.getID().toString(), shoppingList);
-            
+
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(gson.toJson(shoppingLists));
             }

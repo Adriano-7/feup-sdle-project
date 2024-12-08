@@ -3,19 +3,21 @@ package org.project.client;
 import org.project.client.database.LocalDB;
 import org.project.model.ShoppingList;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Client {
     private final Scanner scanner = new Scanner(System.in);
-    private final LocalDB localDB = new LocalDB();
+    private final LocalDB localDB;
     private ShoppingList shoppingList = null;
-    private final UUID userID = UUID.randomUUID();
+    private final String username;
     private final CommunicationHandler serverHandler;
 
-    public Client() {
+    public Client(String username) {
+        this.username = username;
+        this.localDB = new LocalDB(username);
         serverHandler = new CommunicationHandler("tcp://localhost:5555");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(serverHandler);
@@ -23,10 +25,13 @@ public class Client {
 
     public static void main(String[] args) {
         System.out.println("\n================== Shopping List App ==================\n");
-
-        Client client = new Client();
-
         Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Enter your username:");
+        String username = scanner.nextLine();
+
+        Client client = new Client(username);
+
         while (true){
             System.out.println(  "                Server Status: " + (client.serverHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
@@ -136,19 +141,18 @@ public class Client {
             }
 
 
-            int option = scanner.nextInt();
-            scanner.nextLine();
+            int option = getIntFromUser("Enter your choice:");
             switch (option) {
                 case 1:
                     System.out.println("Enter the name of the item:");
                     String name = scanner.nextLine();
+                    int quantity;
                     if (shoppingList.hasItem(name)) {
-                        System.out.println("Item already exists in the shopping list. Target quantity will be added by:");
+                        System.out.println("Item already exists in the shopping list.");
+                        quantity = getIntFromUser("Target quantity will be added by:");
                     } else {
-                        System.out.println("Enter the quantity of the item:");
+                        quantity = getIntFromUser("Enter the quantity:");
                     }
-                    int quantity = scanner.nextInt();
-                    scanner.nextLine();
                     shoppingList.addItem(name, quantity);
                     break;
                 case 2:
@@ -159,10 +163,8 @@ public class Client {
                 case 3:
                     System.out.println("Enter the name of the item:");
                     String id2 = scanner.nextLine();
-                    System.out.println("How many?");
-                    int num = scanner.nextInt();
-                    scanner.nextLine();
-                    long itemsConsumed = shoppingList.consumeItem(id2, userID.toString(), num);
+                    int num = getIntFromUser("How many:");
+                    long itemsConsumed = shoppingList.consumeItem(id2, username, num);
                     if (itemsConsumed > 0) {
                         System.out.println("Consumed " + itemsConsumed + " items.");
                     } else {
@@ -172,6 +174,7 @@ public class Client {
                 case 4:
                     if (serverHandler.isServerRunning()) {
                         synchronizeShoppingList();
+                        break;
                     }
                     else {
                         return;
@@ -180,6 +183,20 @@ public class Client {
                     return;
                 default:
                     System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    private int getIntFromUser(String prompt) {
+        while (true) {
+            System.out.println(prompt);
+            try {
+                int input = scanner.nextInt();
+                scanner.nextLine();
+                return input;
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a valid integer.");
+                scanner.next();
             }
         }
     }
