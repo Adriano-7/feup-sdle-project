@@ -27,9 +27,7 @@ public class ShoppingList {
         this.items = items;
     }
 
-    public UUID getID() {
-        return listID;
-    }
+    public UUID getID() {return listID;}
 
     public String getName() {
         return name;
@@ -64,5 +62,10 @@ public class ShoppingList {
         }
         else s.append(">> No items in the shopping list.");
         return s.append("\n").toString();
+    }
+
+    public ShoppingList merge(ShoppingList other) {
+        LWWSet mergedItems = items.merge(other.getItems());
+        return new ShoppingList(listID, name, mergedItems);
     }
 }

@@ -1,117 +1,70 @@
 package org.project.server;
 
+import org.project.server.Message;
 import org.project.model.ShoppingList;
+import org.zeromq.ZMQ;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.*;
 import java.util.*;
 
 public class LoadBalancer {
-    private final Selector selector;
-    private final ServerSocketChannel serverSocket;
-    private final Map<String, Server> nodes;
+    private final Map<String, String> nodes; // ID do servidor -> Endereço ZeroMQ
     private final HashRing hashRing;
 
-    public LoadBalancer(int port) throws IOException {
-        this.selector = Selector.open();
-        this.serverSocket = ServerSocketChannel.open();
-        this.serverSocket.bind(new InetSocketAddress(port));
-        this.serverSocket.configureBlocking(false);
-        this.serverSocket.register(selector, SelectionKey.OP_ACCEPT);
-
+    public LoadBalancer() {
         this.nodes = new HashMap<>();
         this.hashRing = new HashRing(3);
     }
 
     public void run() {
-        System.out.println("Starting Load Balancer...");
-        while (true) {
-            try {
-                selector.select();
-                Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+        try (ZMQ.Context context = ZMQ.context(1);
+             ZMQ.Socket repSocket = context.socket(ZMQ.REP)) {
+            repSocket.bind("tcp://*:5555");
+            System.out.println("Load Balancer is running...");
 
-                while (keys.hasNext()) {
-                    SelectionKey key = keys.next();
-                    keys.remove();
+            while (!Thread.currentThread().isInterrupted()) {
+                String request = repSocket.recvStr();
+                Message message = Message.deserialize(request);
 
-                    if (key.isAcceptable()) {
-                        acceptConnection();
-                    } else if (key.isReadable()) {
-                        handleRequest(key);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+                String response = processMessage(message);
+                repSocket.send(response);
             }
         }
     }
 
-    private void acceptConnection() throws IOException {
-        SocketChannel client = serverSocket.accept();
-        client.configureBlocking(false);
-        client.register(selector, SelectionKey.OP_READ);
-        System.out.println("Client connected: " + client.getRemoteAddress());
-    }
-
-    private void handleRequest(SelectionKey key) throws IOException {
-        SocketChannel client = (SocketChannel) key.channel();
-        try {
-            Message message = Message.read(client);
-            if (message == null) return;
-
-            processMessage(client, message);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void processMessage(SocketChannel client, Message message) throws IOException {
+    private String processMessage(Message message) {
         String operation = message.getOperation();
         String key = message.getKey();
         String value = message.getValue();
 
         String serverId = hashRing.getServer(key);
-        Server targetServer = nodes.get(serverId);
+        String serverAddress = nodes.get(serverId);
+
+        if (serverAddress == null) {
+            return "error/server_not_found";
+        }
 
         if ("CREATE".equals(operation)) {
-            ShoppingList newList = new ShoppingList(value);
-            targetServer.store(key, newList);
-            replicateData(key, newList, serverId);
-            sendResponse(client, "List created: " + value);
+            boolean success = forwardToServer(serverAddress, new Message("write", key, value));
+            return success ? "List created: " + value : "error/create_failed";
         } else if ("ADD".equals(operation)) {
-            ShoppingList list = targetServer.retrieve(key);
-            if (list == null) {
-                sendResponse(client, "Error: List not found.");
-            } else {
-                String[] parts = value.split(",", 2);
-                list.addItem(parts[0], Integer.parseInt(parts[1]));
-                sendResponse(client, "Item added: " + parts[0]);
-            }
+            boolean success = forwardToServer(serverAddress, new Message("update", key, value));
+            return success ? "Item added: " + value.split(",")[0] : "error/add_failed";
+        }
+        return "error/unknown_operation";
+    }
+
+    private boolean forwardToServer(String serverAddress, Message message) {
+        try (ZMQ.Context context = ZMQ.context(1); ZMQ.Socket reqSocket = context.socket(ZMQ.REQ)) {
+            reqSocket.connect(serverAddress);
+            reqSocket.send(message.serialize());
+            String response = reqSocket.recvStr();
+            return response != null && !response.startsWith("error");
         }
     }
 
-    private void replicateData(String key, ShoppingList data, String primaryServerId) {
-        int replicationFactor = 2;
-        List<String> predecessors = hashRing.getPredecessors(primaryServerId, replicationFactor);
-
-        for (String predId : predecessors) {
-            Server predServer = nodes.get(predId);
-            if (predServer != null) {
-                predServer.store(key, data);
-                System.out.println("Data replicated to server: " + predServer.getName());
-            }
-        }
-    }
-
-    private void sendResponse(SocketChannel client, String response) throws IOException {
-        Message responseMessage = new Message("RESPONSE", null, response);
-        responseMessage.send(client);
-    }
-
-    public void addNode(Server server) {
-        nodes.put(server.getName(), server);
-        hashRing.addServer(server.getName());
-        System.out.println("Server added: " + server.getName());
+    public void addNode(String serverId, String serverAddress) {
+        nodes.put(serverId, serverAddress);
+        hashRing.addServer(serverId);
+        System.out.println("Server added: " + serverId + " at " + serverAddress);
     }
 }

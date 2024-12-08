@@ -1,8 +1,6 @@
 package org.project.server;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 public class Message implements Serializable {
     private final String operation; // Ex: "CREATE", "ADD"
@@ -28,39 +26,28 @@ public class Message implements Serializable {
         return value;
     }
 
-    public void send(SocketChannel channel) throws IOException {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
-        objStream.writeObject(this);
-        objStream.flush();
-
-        byte[] data = byteStream.toByteArray();
-        ByteBuffer buffer = ByteBuffer.allocate(4 + data.length);
-        buffer.putInt(data.length);
-        buffer.put(data);
-        buffer.flip();
-
-        while (buffer.hasRemaining()) {
-            channel.write(buffer);
+    // Serializa a mensagem para envio via ZeroMQ
+    public String serialize() {
+        try {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
+            objStream.writeObject(this);
+            objStream.flush();
+            return byteStream.toString("ISO-8859-1");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize message: " + e.getMessage(), e);
         }
     }
 
-    public static Message read(SocketChannel channel) throws IOException, ClassNotFoundException {
-        ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
-        if (channel.read(sizeBuffer) < 4) return null;
-
-        sizeBuffer.flip();
-        int size = sizeBuffer.getInt();
-
-        ByteBuffer dataBuffer = ByteBuffer.allocate(size);
-        channel.read(dataBuffer);
-        dataBuffer.flip();
-
-        byte[] data = new byte[size];
-        dataBuffer.get(data);
-
-        ObjectInputStream objStream = new ObjectInputStream(new ByteArrayInputStream(data));
-        return (Message) objStream.readObject();
+    // Desserializa uma string recebida via ZeroMQ para uma mensagem
+    public static Message deserialize(String data) {
+        try {
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(data.getBytes("ISO-8859-1"));
+            ObjectInputStream objStream = new ObjectInputStream(byteStream);
+            return (Message) objStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Failed to deserialize message: " + e.getMessage(), e);
+        }
     }
 
     @Override
