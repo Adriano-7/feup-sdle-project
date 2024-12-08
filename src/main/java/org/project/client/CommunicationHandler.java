@@ -18,7 +18,6 @@ public class CommunicationHandler implements Runnable {
     private final String serverAddress;
     private final BlockingQueue<String> commandQueue;
     private final BlockingQueue<String> responseQueue;
-    private final AtomicBoolean isRunning;
     private final Gson gson;
 
     public static final String READ_COMMAND = "read";
@@ -28,7 +27,6 @@ public class CommunicationHandler implements Runnable {
         this.serverAddress = serverAddress;
         this.commandQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
-        this.isRunning = new AtomicBoolean(false);
 
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
@@ -41,9 +39,7 @@ public class CommunicationHandler implements Runnable {
             ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
             socket.connect(serverAddress);
 
-            isRunning.set(true);
-
-            while (isRunning.get()) {
+            while (true) {
                 String command = commandQueue.take();
 
                 socket.send(command.getBytes(ZMQ.CHARSET), 0);
@@ -72,10 +68,6 @@ public class CommunicationHandler implements Runnable {
         return responseQueue.take();
     }
 
-    public void stop() {
-        isRunning.set(false);
-    }
-
     public ShoppingList parseShoppingListResponse(String response) {
         try {
             return gson.fromJson(response, ShoppingList.class);
@@ -86,6 +78,22 @@ public class CommunicationHandler implements Runnable {
     }
 
     public boolean isServerRunning() {
-        return isRunning.get();
+        try (ZContext context = new ZContext()) {
+            ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
+            socket.connect(serverAddress);
+            socket.send("ping".getBytes(ZMQ.CHARSET), 0);
+
+            socket.setReceiveTimeOut(200);
+            byte[] responseBytes = socket.recv(0);
+
+            if (responseBytes == null) {
+                return false; // Timeout occurred
+            }
+
+            String response = new String(responseBytes, ZMQ.CHARSET);
+            return response.equals("pong");
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
