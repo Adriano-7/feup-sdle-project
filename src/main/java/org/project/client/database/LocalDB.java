@@ -8,10 +8,7 @@ import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
 import org.project.model.ShoppingList;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,8 +41,6 @@ public class LocalDB {
     }
 
     public ShoppingList getShoppingList(String id) {
-        System.out.println("Retrieving shopping list from local database...");
-
         try (FileReader reader = new FileReader(filePath)) {
             Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
             Map<String, ShoppingList> shoppingLists = gson.fromJson(reader, type);
@@ -60,8 +55,6 @@ public class LocalDB {
     }
 
     public void saveShoppingList(ShoppingList shoppingList) {
-        System.out.println("Saving shopping list to local database...");
-
         try {
             File file = new File(filePath);
             Map<String, ShoppingList> shoppingLists;
@@ -79,6 +72,32 @@ public class LocalDB {
 
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write(gson.toJson(shoppingLists));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteShoppingList(String id) {
+        try {
+            File file = new File(filePath);
+            Map<String, ShoppingList> shoppingLists;
+
+            // Read existing shopping lists
+            try (FileReader reader = new FileReader(file)) {
+                Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
+                shoppingLists = gson.fromJson(reader, type);
+            }
+
+            // Check if shopping lists exist and contain the specified id
+            if (shoppingLists != null && shoppingLists.containsKey(id)) {
+                // Remove the shopping list
+                shoppingLists.remove(id);
+
+                // Write updated shopping lists back to the file
+                try (FileWriter writer = new FileWriter(file)) {
+                    writer.write(gson.toJson(shoppingLists));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
