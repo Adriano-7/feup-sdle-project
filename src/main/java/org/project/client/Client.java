@@ -64,7 +64,7 @@ public class Client {
     }
 
     public void saveShoppingList() {
-        //TODO: If server is online, synchronize the shopping list with the server
+        synchronizeShoppingList();
         localDB.saveShoppingList(this.shoppingList);
     }
 
