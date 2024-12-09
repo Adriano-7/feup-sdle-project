@@ -12,7 +12,6 @@ import org.project.model.ShoppingList;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommunicationHandler implements Runnable {
     private final String serverAddress;

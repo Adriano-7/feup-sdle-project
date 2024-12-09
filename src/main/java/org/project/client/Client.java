@@ -53,7 +53,8 @@ public class Client {
             }
             if (client.shoppingList != null) {
                 client.updateShoppingList();
-                client.saveShoppingList();
+                client.synchronizeShoppingList();
+                client.saveShoppingListLocally();
                 client.shoppingList = null;
             }
         }
@@ -64,13 +65,12 @@ public class Client {
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
         synchronizeShoppingList();
-        saveShoppingList();
+        saveShoppingListLocally();
     }
 
-    public void saveShoppingList() {
+    public void saveShoppingListLocally() {
         if (!shoppingList.isDeleted()) {
             System.out.println("Saving shopping list...");
-            synchronizeShoppingList();
             localDB.saveShoppingList(this.shoppingList);
         } else {
             localDB.deleteShoppingList(this.shoppingList.getID().toString());
@@ -104,7 +104,6 @@ public class Client {
     public void searchShoppingList() {
         while (true) {
             String id = getShoppingListIdFromUser();
-
             try {
                 shoppingList = localDB.getShoppingList(id);
 
