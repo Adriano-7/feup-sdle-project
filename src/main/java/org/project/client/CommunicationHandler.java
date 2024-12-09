@@ -59,7 +59,7 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
     }
     public void writeShoppingList(ShoppingList shoppingList) throws InterruptedException {
         String shoppingListJson = gson.toJson(shoppingList);
-        commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
+        commandQueue.put(WRITE_COMMAND + "/" + shoppingList.getID()  + "/" + shoppingListJson);
     }
     public void deleteShoppingList(String listId) throws InterruptedException {
         commandQueue.put("delete/" + listId);

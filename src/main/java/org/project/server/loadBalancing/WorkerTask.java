@@ -55,9 +55,6 @@ public class WorkerTask implements ZThread.IDetachedRunnable {
 
     private String processRequest(String message) {
         try {
-            if (message.equals("ping")) {
-                return "pong";
-            }
             if (message.startsWith("read/")) {
                 return handleReadCommand(message.substring(5));
             }
@@ -75,14 +72,15 @@ public class WorkerTask implements ZThread.IDetachedRunnable {
     }
 
     private String handleReadCommand(String id) {
-        System.out.println("Reading shopping list: " + id);
+        System.out.println("Worker " + workerNbr + " is reading shopping list: " + id);
 
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
+            System.out.println("Worker " + workerNbr + " list not found: " + id);
             throw new IllegalArgumentException("List Not Found");
         }
         if (shoppingList.isDeleted()) {
-            System.out.println("List is deleted");
+            System.out.println("Worker " + workerNbr + " List is deleted");
             return "error/list_deleted";
         }
 
@@ -90,9 +88,18 @@ public class WorkerTask implements ZThread.IDetachedRunnable {
     }
 
     private String handleWriteCommand(String message) {
+        //command: listID/shoppingListJson
+        String[] parts = message.split("/", 2);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid Write Command");
+        }
+        String id = parts[0];
+        String shoppingList = parts[1];
+
+        System.out.println("Worker " + workerNbr + " syncing shopping list: " + id);
+
         try {
-            ShoppingList incomingList = gson.fromJson(message, ShoppingList.class);
-            String id = incomingList.getID().toString();
+            ShoppingList incomingList = gson.fromJson(shoppingList, ShoppingList.class);
 
             ShoppingList existingList = shoppingLists.get(id);
             if (existingList == null){
@@ -113,7 +120,7 @@ public class WorkerTask implements ZThread.IDetachedRunnable {
     }
 
     private String handleDeleteCommand(String id) {
-        System.out.println("Deleting shopping list: " + id);
+        System.out.println("Worker " + workerNbr + " is deleting shopping list: " + id);
 
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {

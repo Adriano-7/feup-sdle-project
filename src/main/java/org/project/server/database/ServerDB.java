@@ -21,11 +21,10 @@ public class ServerDB {
             .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
             .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
             .create();
-    private static final String filePath = "src/main/java/org/project/server/database/db.json";
+    public static Map<String, ShoppingList> loadShoppingLists(int workerNbr) {
+        System.out.println("Worker " + workerNbr + " loading shopping lists from local database...");
 
-    public static Map<String, ShoppingList> loadShoppingLists(int workerIdentity) {
-        System.out.println("Loading shopping lists from local database...");
-
+        String filePath = "src/main/java/org/project/server/database/" + workerNbr + "_db.json";
         File file = new File(filePath);
         if (file.length() == 0) {
             return new HashMap<>();
@@ -42,8 +41,9 @@ public class ServerDB {
     }
 
     public static void saveShoppingList(ShoppingList shoppingList, int workerIdentity) {
-        System.out.println("Saving shopping list to local database...");
+        System.out.println("Worker " + workerIdentity + " saving shopping list to local database...");
 
+        String filePath = "src/main/java/org/project/server/database/" + workerIdentity + "_db.json";
         try {
             File file = new File(filePath);
             Map<String, ShoppingList> shoppingLists;
