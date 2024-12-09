@@ -1,9 +1,9 @@
-package org.project.LoadBalancer.server;
+package org.project.server.loadBalancing;
 
+import org.zeromq.ZFrame;
 import org.zeromq.ZLoop;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.PollItem;
-import org.zeromq.ZFrame;
 import org.zeromq.ZMsg;
 
 import java.util.Arrays;

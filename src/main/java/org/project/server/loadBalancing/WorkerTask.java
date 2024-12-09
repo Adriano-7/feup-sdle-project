@@ -1,4 +1,4 @@
-package org.project.server;
+package org.project.server.loadBalancing;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,43 +7,48 @@ import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
 import org.project.model.ShoppingList;
 import org.project.server.database.ServerDB;
-import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
-import org.zeromq.ZContext;
+import org.zeromq.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Server {
-    private static final int PORT = 5555;
+public class WorkerTask implements ZThread.IDetachedRunnable {
+    private final int workerNbr;
+    private static final byte[] WORKER_READY = { '\001' };
     private final Map<String, ShoppingList> shoppingLists;
     private final Gson gson;
 
-    public Server() {
-        this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists());
+    public WorkerTask(int workerNbr) {
+        this.workerNbr = workerNbr;
+        this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists(workerNbr));
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .setPrettyPrinting()
                 .create();
     }
-
-    public void start() {
-        System.out.println("Starting Server on port " + PORT);
+    @Override
+    public void run(Object[] args) {
+        System.out.println("Starting Worker: " + workerNbr);
 
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket socket = context.createSocket(SocketType.REP);
-            socket.bind("tcp://*:" + PORT);
+            ZMQ.Socket worker = context.createSocket(SocketType.REQ);
+            worker.setIdentity(("W" + Math.random()).getBytes());
+            worker.connect("ipc://backend.ipc");
 
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    byte[] request = socket.recv(0);
-                    String response = processRequest(new String(request, ZMQ.CHARSET));
-                    socket.send(response.getBytes(ZMQ.CHARSET), 0);
-                } catch (Exception e) {
-                    System.out.println("Error processing request: " + e.getMessage());
-                    socket.send("error/server_error".getBytes(ZMQ.CHARSET), 0);
-                }
+            // Notify backend of readiness
+            ZFrame frame = new ZFrame(WORKER_READY);
+            frame.send(worker, 0);
+
+            while (true) {
+                ZMsg msg = ZMsg.recvMsg(worker);
+                if (msg == null)
+                    break;
+
+                String response = processRequest(new String(msg.getLast().getData(), ZMQ.CHARSET));
+
+                msg.getLast().reset(response);
+                msg.send(worker);
             }
         }
     }
@@ -92,11 +97,11 @@ public class Server {
             ShoppingList existingList = shoppingLists.get(id);
             if (existingList == null){
                 shoppingLists.put(id, incomingList);
-                ServerDB.saveShoppingList(incomingList);
+                ServerDB.saveShoppingList(incomingList, workerNbr);
                 return gson.toJson(incomingList);
             }
             ShoppingList updatedList = existingList.merge(incomingList);
-            ServerDB.saveShoppingList(updatedList);
+            ServerDB.saveShoppingList(updatedList, workerNbr);
             shoppingLists.put(id, updatedList);
             if (updatedList.isDeleted()) {
                 return "error/list_deleted";
@@ -116,11 +121,7 @@ public class Server {
         }
         shoppingList.setDeleted();
         shoppingLists.put(id, shoppingList);
-        ServerDB.saveShoppingList(shoppingList);
+        ServerDB.saveShoppingList(shoppingList, workerNbr);
         return "success/deleted";
-    }
-
-    public static void main(String[] args) {
-        new Server().start();
     }
 }

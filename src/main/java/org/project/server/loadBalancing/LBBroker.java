@@ -1,7 +1,7 @@
-package org.project.LoadBalancer.server;
+package org.project.server.loadBalancing;
 
-import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZFrame;
+import org.zeromq.ZMQ.Socket;
 
 import java.util.Queue;
 

@@ -23,7 +23,7 @@ public class ServerDB {
             .create();
     private static final String filePath = "src/main/java/org/project/server/database/db.json";
 
-    public static Map<String, ShoppingList> loadShoppingLists() {
+    public static Map<String, ShoppingList> loadShoppingLists(int workerIdentity) {
         System.out.println("Loading shopping lists from local database...");
 
         File file = new File(filePath);
@@ -41,7 +41,7 @@ public class ServerDB {
         return new HashMap<>();
     }
 
-    public static void saveShoppingList(ShoppingList shoppingList) {
+    public static void saveShoppingList(ShoppingList shoppingList, int workerIdentity) {
         System.out.println("Saving shopping list to local database...");
 
         try {

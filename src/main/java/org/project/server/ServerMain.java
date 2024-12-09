@@ -1,5 +1,8 @@
-package org.project.LoadBalancer.server;
+package org.project.server;
 
+import org.project.server.loadBalancing.BackendHandler;
+import org.project.server.loadBalancing.LBBroker;
+import org.project.server.loadBalancing.WorkerTask;
 import org.zeromq.*;
 import org.zeromq.ZMQ.PollItem;
 
@@ -17,7 +20,7 @@ public class ServerMain {
             arg.backend.bind("ipc://backend.ipc");
 
             for (int workerNbr = 0; workerNbr < NBR_WORKERS; workerNbr++)
-                ZThread.start(new WorkerTask());
+                ZThread.start(new WorkerTask(workerNbr));
 
             arg.workers = new LinkedList<>();
 
