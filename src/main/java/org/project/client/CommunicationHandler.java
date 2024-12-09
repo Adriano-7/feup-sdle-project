@@ -12,7 +12,6 @@ import org.project.model.ShoppingList;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommunicationHandler implements Runnable {
     private final String serverAddress;
@@ -60,6 +59,9 @@ public class CommunicationHandler implements Runnable {
     public void writeShoppingList(ShoppingList shoppingList) throws InterruptedException {
         String shoppingListJson = gson.toJson(shoppingList);
         commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
+    }
+    public void deleteShoppingList(String listId) throws InterruptedException {
+        commandQueue.put("delete/" + listId);
     }
     public String getResponse() throws InterruptedException {
         return responseQueue.take();
