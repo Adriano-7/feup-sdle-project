@@ -60,6 +60,9 @@ public class CommunicationHandler implements Runnable {
         String shoppingListJson = gson.toJson(shoppingList);
         commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
     }
+    public void deleteShoppingList(String listId) throws InterruptedException {
+        commandQueue.put("delete/" + listId);
+    }
     public String getResponse() throws InterruptedException {
         return responseQueue.take();
     }

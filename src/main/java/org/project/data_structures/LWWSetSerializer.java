@@ -10,6 +10,6 @@ import java.lang.reflect.Type;
 public class LWWSetSerializer implements JsonSerializer<LWWSet> {
     @Override
     public JsonElement serialize(LWWSet src, Type typeOfSrc, JsonSerializationContext context) {
-        return context.serialize(src.items); // Serialize only the items map
+        return context.serialize(src.items);
     }
 }

@@ -60,6 +60,9 @@ public class Server {
             if (message.startsWith("write/")) {
                 return handleWriteCommand(message.substring(6));
             }
+            if (message.startsWith("delete/")) {
+                return handleDeleteCommand(message.substring(7));
+            }
             throw new IllegalArgumentException("Unknown command");
         } catch (IllegalArgumentException e) {
             System.out.println("Request processing error: " + e.getMessage());
@@ -73,6 +76,10 @@ public class Server {
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
             throw new IllegalArgumentException("List Not Found");
+        }
+        if (shoppingList.isDeleted()) {
+            System.out.println("List is deleted");
+            return "error/list_deleted";
         }
 
         // Returns the list as JSON
@@ -97,10 +104,26 @@ public class Server {
             ShoppingList updatedList = existingList.merge(incomingList);
             ServerDB.saveShoppingList(updatedList);
             shoppingLists.put(id, updatedList);
+            if (updatedList.isDeleted()) {
+                return "error/list_deleted";
+            }
             return gson.toJson(updatedList);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid Shopping List Data");
         }
+    }
+
+    private String handleDeleteCommand(String id) {
+        System.out.println("Deleting shopping list: " + id);
+
+        ShoppingList shoppingList = shoppingLists.get(id);
+        if (shoppingList == null) {
+            throw new IllegalArgumentException("List Not Found");
+        }
+        shoppingList.setDeleted();
+        shoppingLists.put(id, shoppingList);
+        ServerDB.saveShoppingList(shoppingList);
+        return "success/deleted";
     }
 
     public static void main(String[] args) {
