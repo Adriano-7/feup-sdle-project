@@ -62,6 +62,15 @@ public class LoadBalancer {
         }
     }
 
+    public String getServerForKey(String key) {
+        String serverId = hashRing.getServer(key);
+        if (serverId == null || !nodes.containsKey(serverId)) {
+            return null;
+        }
+        return nodes.get(serverId);
+    }
+
+
     public void addNode(String serverId, String serverAddress) {
         nodes.put(serverId, serverAddress);
         hashRing.addServer(serverId);

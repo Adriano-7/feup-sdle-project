@@ -12,7 +12,6 @@ import org.project.model.ShoppingList;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CommunicationHandler implements Runnable {
     private final String serverAddress;
@@ -23,8 +22,8 @@ public class CommunicationHandler implements Runnable {
     public static final String READ_COMMAND = "read";
     public static final String WRITE_COMMAND = "write";
 
-    public CommunicationHandler(String serverAddress) {
-        this.serverAddress = serverAddress;
+    public CommunicationHandler(String loadBalancerAddress) {
+        this.serverAddress = loadBalancerAddress;
         this.commandQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
 
@@ -41,7 +40,6 @@ public class CommunicationHandler implements Runnable {
 
             while (true) {
                 String command = commandQueue.take();
-
                 socket.send(command.getBytes(ZMQ.CHARSET), 0);
 
                 byte[] responseBytes = socket.recv(0);
@@ -54,6 +52,7 @@ public class CommunicationHandler implements Runnable {
             System.err.println("Server communication thread interrupted");
         }
     }
+
     public void readShoppingList(String listId) throws InterruptedException {
         commandQueue.put(READ_COMMAND + "/" + listId);
     }

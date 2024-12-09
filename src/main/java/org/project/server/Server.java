@@ -2,7 +2,6 @@ package org.project.server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.project.server.Message;
 import org.project.data_structures.LWWSet;
 import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
@@ -16,12 +15,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    private static final int PORT = 5555;
+    private final int port;
     private final Map<String, ShoppingList> shoppingLists;
     private final Gson gson;
 
-    public Server() {
-        // Load shopping lists from the database
+    public Server(int port) {
+        this.port = port;
         this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists());
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
@@ -31,20 +30,16 @@ public class Server {
     }
 
     public void start() {
-        System.out.println("Starting Server on port " + PORT);
+        System.out.println("Starting Server on port " + port);
 
         try (ZContext context = new ZContext()) {
-            // ZeroMQ REP socket configuration
             ZMQ.Socket repSocket = context.createSocket(SocketType.REP);
-            repSocket.bind("tcp://*:" + PORT);
+            repSocket.bind("tcp://*:" + port);
 
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    // Recebe a requisição
                     byte[] request = repSocket.recv(0);
                     String response = processRequest(new String(request, ZMQ.CHARSET));
-
-                    // Envia a resposta
                     repSocket.send(response.getBytes(ZMQ.CHARSET), 0);
                 } catch (Exception e) {
                     System.out.println("Error processing request: " + e.getMessage());
@@ -109,6 +104,16 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        new Server().start();
+        if (args.length < 1) {
+            System.out.println("Please specify the port for the server.");
+            return;
+        }
+
+        try {
+            int port = Integer.parseInt(args[0]);
+            new Server(port).start();
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid port number: " + args[0]);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.project;
 
 import org.project.client.Client;
+import org.project.server.LoadBalancer;
 import org.project.server.Server;
 
 public class Main {
@@ -22,6 +23,21 @@ public class Main {
 
             case "client" -> {
                 Client.main(new String[]{});
+            }
+
+            case "loadbalancer" -> {
+                try {
+                    LoadBalancer loadBalancer = new LoadBalancer();
+
+                    loadBalancer.addNode("server1", "tcp://localhost:6000");
+                    loadBalancer.addNode("server2", "tcp://localhost:6001");
+                    loadBalancer.addNode("server3", "tcp://localhost:6002");
+
+                    loadBalancer.run();
+                } catch (Exception e) {
+                    System.err.println("Error while running the load balancer: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
             default -> {
