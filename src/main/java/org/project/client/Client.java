@@ -2,6 +2,7 @@ package org.project.client;
 
 import org.project.client.database.LocalDB;
 import org.project.model.ShoppingList;
+import org.zeromq.ZThread;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -18,9 +19,8 @@ public class Client {
     public Client(String username) {
         this.username = username;
         this.localDB = new LocalDB(username);
-        communicationHandler = new CommunicationHandler("tcp://localhost:5555");
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(communicationHandler);
+        communicationHandler = new CommunicationHandler(username);
+        ZThread.start(communicationHandler);
     }
 
     public static void main(String[] args) {

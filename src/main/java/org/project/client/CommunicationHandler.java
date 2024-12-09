@@ -1,5 +1,6 @@
 package org.project.client;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 import com.google.gson.Gson;
@@ -9,21 +10,22 @@ import org.project.data_structures.LWWSet;
 import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
 import org.project.model.ShoppingList;
+import org.zeromq.ZThread;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class CommunicationHandler implements Runnable {
-    private final String serverAddress;
+public class CommunicationHandler implements ZThread.IDetachedRunnable {
     private final BlockingQueue<String> commandQueue;
     private final BlockingQueue<String> responseQueue;
     private final Gson gson;
+    private final String username;
 
     public static final String READ_COMMAND = "read";
     public static final String WRITE_COMMAND = "write";
 
-    public CommunicationHandler(String loadBalancerAddress) {
-        this.serverAddress = loadBalancerAddress;
+    public CommunicationHandler(String username) {
+        this.username = username;
         this.commandQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
 
@@ -33,32 +35,31 @@ public class CommunicationHandler implements Runnable {
                 .create();
     }
     @Override
-    public void run() {
+    public void run(Object[] args) {
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
-            socket.connect(serverAddress);
+            ZMQ.Socket client = context.createSocket(SocketType.REQ);
+            client.setIdentity(("C" + username).getBytes());
+            client.connect("ipc://frontend.ipc");
 
+            // Send request, get reply
             while (true) {
                 String command = commandQueue.take();
-                socket.send(command.getBytes(ZMQ.CHARSET), 0);
+                client.send(command);
 
-                byte[] responseBytes = socket.recv(0);
-                String response = new String(responseBytes, ZMQ.CHARSET);
-
-                responseQueue.put(response);
+                String reply = client.recvStr();
+                responseQueue.put(reply);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.err.println("Server communication thread interrupted");
         }
     }
-
     public void readShoppingList(String listId) throws InterruptedException {
         commandQueue.put(READ_COMMAND + "/" + listId);
     }
     public void writeShoppingList(ShoppingList shoppingList) throws InterruptedException {
         String shoppingListJson = gson.toJson(shoppingList);
-        commandQueue.put(WRITE_COMMAND + "/" + shoppingListJson);
+        commandQueue.put(WRITE_COMMAND + "/" + shoppingList.getID()  + "/" + shoppingListJson);
     }
     public void deleteShoppingList(String listId) throws InterruptedException {
         commandQueue.put("delete/" + listId);
@@ -76,23 +77,8 @@ public class CommunicationHandler implements Runnable {
         }
     }
 
+    //TODO: Vamos ter que remover esta logica, e em vez de polling fazer timeout
     public boolean isServerRunning() {
-        try (ZContext context = new ZContext()) {
-            ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
-            socket.connect(serverAddress);
-            socket.send("ping".getBytes(ZMQ.CHARSET), 0);
-
-            socket.setReceiveTimeOut(200);
-            byte[] responseBytes = socket.recv(0);
-
-            if (responseBytes == null) {
-                return false; // Timeout occurred
-            }
-
-            String response = new String(responseBytes, ZMQ.CHARSET);
-            return response.equals("pong");
-        } catch (Exception e) {
-            return false;
-        }
+        return true;
     }
 }

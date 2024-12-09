@@ -1,4 +1,4 @@
-package org.project.server;
+package org.project.server.loadBalancing;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,53 +7,54 @@ import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
 import org.project.model.ShoppingList;
 import org.project.server.database.ServerDB;
-import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
-import org.zeromq.ZContext;
+import org.zeromq.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Server {
-    private final int port;
+public class WorkerTask implements ZThread.IDetachedRunnable {
+    private final int workerNbr;
+    private static final byte[] WORKER_READY = { '\001' };
     private final Map<String, ShoppingList> shoppingLists;
     private final Gson gson;
 
-    public Server(int port) {
-        this.port = port;
-        this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists());
+    public WorkerTask(int workerNbr) {
+        this.workerNbr = workerNbr;
+        this.shoppingLists = new ConcurrentHashMap<>(ServerDB.loadShoppingLists(workerNbr));
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .setPrettyPrinting()
                 .create();
     }
-
-    public void start() {
-        System.out.println("Starting Server on port " + port);
+    @Override
+    public void run(Object[] args) {
+        System.out.println("Starting Worker: " + workerNbr);
 
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket repSocket = context.createSocket(SocketType.REP);
-            repSocket.bind("tcp://*:" + port);
+            ZMQ.Socket worker = context.createSocket(SocketType.REQ);
+            worker.setIdentity(("W" + Math.random()).getBytes());
+            worker.connect("ipc://backend.ipc");
 
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    byte[] request = repSocket.recv(0);
-                    String response = processRequest(new String(request, ZMQ.CHARSET));
-                    repSocket.send(response.getBytes(ZMQ.CHARSET), 0);
-                } catch (Exception e) {
-                    System.out.println("Error processing request: " + e.getMessage());
-                    repSocket.send("error/server_error".getBytes(ZMQ.CHARSET), 0);
-                }
+            // Notify backend of readiness
+            ZFrame frame = new ZFrame(WORKER_READY);
+            frame.send(worker, 0);
+
+            while (true) {
+                ZMsg msg = ZMsg.recvMsg(worker);
+                if (msg == null)
+                    break;
+
+                String response = processRequest(new String(msg.getLast().getData(), ZMQ.CHARSET));
+
+                msg.getLast().reset(response);
+                msg.send(worker);
             }
         }
     }
 
     private String processRequest(String message) {
         try {
-            if (message.equals("ping")) {
-                return "pong"; // Respond to ping for status check
-            }
             if (message.startsWith("read/")) {
                 return handleReadCommand(message.substring(5));
             }
@@ -71,38 +72,43 @@ public class Server {
     }
 
     private String handleReadCommand(String id) {
-        System.out.println("Reading shopping list: " + id);
+        System.out.println("Worker " + workerNbr + " is reading shopping list: " + id);
 
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
+            System.out.println("Worker " + workerNbr + " list not found: " + id);
             throw new IllegalArgumentException("List Not Found");
         }
         if (shoppingList.isDeleted()) {
-            System.out.println("List is deleted");
+            System.out.println("Worker " + workerNbr + " List is deleted");
             return "error/list_deleted";
         }
 
-        // Returns the list as JSON
         return gson.toJson(shoppingList);
     }
 
     private String handleWriteCommand(String message) {
-        try {
-            // Deserializes the shopping list received
-            ShoppingList incomingList = gson.fromJson(message, ShoppingList.class);
-            String id = incomingList.getID().toString();
+        //command: listID/shoppingListJson
+        String[] parts = message.split("/", 2);
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid Write Command");
+        }
+        String id = parts[0];
+        String shoppingList = parts[1];
 
-            // Update or create a new shopping list
+        System.out.println("Worker " + workerNbr + " syncing shopping list: " + id);
+
+        try {
+            ShoppingList incomingList = gson.fromJson(shoppingList, ShoppingList.class);
+
             ShoppingList existingList = shoppingLists.get(id);
-            if (existingList == null) {
+            if (existingList == null){
                 shoppingLists.put(id, incomingList);
-                ServerDB.saveShoppingList(incomingList);
+                ServerDB.saveShoppingList(incomingList, workerNbr);
                 return gson.toJson(incomingList);
             }
-
-            // Merge lists if there is already a list with the same ID
             ShoppingList updatedList = existingList.merge(incomingList);
-            ServerDB.saveShoppingList(updatedList);
+            ServerDB.saveShoppingList(updatedList, workerNbr);
             shoppingLists.put(id, updatedList);
             if (updatedList.isDeleted()) {
                 return "error/list_deleted";
@@ -114,7 +120,7 @@ public class Server {
     }
 
     private String handleDeleteCommand(String id) {
-        System.out.println("Deleting shopping list: " + id);
+        System.out.println("Worker " + workerNbr + " is deleting shopping list: " + id);
 
         ShoppingList shoppingList = shoppingLists.get(id);
         if (shoppingList == null) {
@@ -122,21 +128,7 @@ public class Server {
         }
         shoppingList.setDeleted();
         shoppingLists.put(id, shoppingList);
-        ServerDB.saveShoppingList(shoppingList);
+        ServerDB.saveShoppingList(shoppingList, workerNbr);
         return "success/deleted";
-    }
-
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Please specify the port for the server.");
-            return;
-        }
-
-        try {
-            int port = Integer.parseInt(args[0]);
-            new Server(port).start();
-        } catch (NumberFormatException e) {
-            System.err.println("Invalid port number: " + args[0]);
-        }
     }
 }
