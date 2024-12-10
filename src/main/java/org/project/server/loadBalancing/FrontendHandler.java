@@ -1,20 +1,44 @@
 package org.project.server.loadBalancing;
 
+import org.project.server.LoadBalancer;
+import org.zeromq.ZFrame;
 import org.zeromq.ZLoop;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMsg;
 
-//Frontend: clients -> worker
 public class FrontendHandler implements ZLoop.IZLoopHandler {
+    private final LoadBalancer loadBalancer;
+
+    public FrontendHandler(LoadBalancer loadBalancer) {
+        this.loadBalancer = loadBalancer; // Inicializa o LoadBalancer
+    }
+
     @Override
     public int handle(ZLoop loop, PollItem item, Object arg_) {
         LBBroker arg = (LBBroker) arg_;
         ZMsg msg = ZMsg.recvMsg(arg.frontend);
 
-        String listId = getListId(msg); //This will be useful to get the node from the hashRing that has the list
-
         if (msg != null) {
-            msg.wrap(arg.workers.poll()); //TODO: @Inês em vez do poll, vamos ter que usar o hashRing para saber qual é o worker que tem a lista
+            String listId = getListId(msg); // Obtém o ID da lista
+            String serverId = loadBalancer.getServerForKey(listId); // Obtém o worker responsável pela lista
+
+            if (serverId == null) {
+                System.err.println("No server found for list ID: " + listId);
+                msg.destroy();
+                return 0;
+            }
+
+            // Obtém o endereço do worker correto
+            String workerAddress = loadBalancer.getServerForKey(serverId);
+
+            if (workerAddress == null) {
+                System.err.println("No worker address found for server ID: " + serverId);
+                msg.destroy();
+                return 0;
+            }
+
+            // Envolve a mensagem com o endereço do worker apropriado
+            msg.wrap(new ZFrame(workerAddress));
             msg.send(arg.backend);
 
             if (arg.workers.size() == 0) {
@@ -24,8 +48,7 @@ public class FrontendHandler implements ZLoop.IZLoopHandler {
         return 0;
     }
 
-
-    String getListId(ZMsg msg) {
+    private String getListId(ZMsg msg) {
         String msgString = msg.toString().replace("[", "").replace("]", "").trim();
         String[] elements = msgString.split(",\\s*");
         String thirdElement = elements[2];

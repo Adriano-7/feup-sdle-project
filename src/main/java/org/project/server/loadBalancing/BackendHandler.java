@@ -1,5 +1,6 @@
 package org.project.server.loadBalancing;
 
+import org.project.server.LoadBalancer;
 import org.zeromq.ZFrame;
 import org.zeromq.ZLoop;
 import org.zeromq.ZMQ;
@@ -10,6 +11,11 @@ import java.util.Arrays;
 
 public class BackendHandler implements ZLoop.IZLoopHandler {
     private static final byte[] WORKER_READY = { '\001' };
+    private final LoadBalancer loadBalancer;
+
+    public BackendHandler(LoadBalancer loadBalancer) {
+        this.loadBalancer = loadBalancer; // Armazena referência ao LoadBalancer
+    }
 
     @Override
     public int handle(ZLoop loop, PollItem item, Object arg_) {
@@ -21,7 +27,7 @@ public class BackendHandler implements ZLoop.IZLoopHandler {
 
             if (arg.workers.size() == 1) {
                 PollItem newItem = new PollItem(arg.frontend, ZMQ.Poller.POLLIN);
-                loop.addPoller(newItem, new FrontendHandler(), arg);
+                loop.addPoller(newItem, new FrontendHandler(loadBalancer), arg);
             }
 
             ZFrame frame = msg.getFirst();
