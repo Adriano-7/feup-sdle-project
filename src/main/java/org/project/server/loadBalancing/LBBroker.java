@@ -8,5 +8,5 @@ import java.util.Queue;
 public class LBBroker {
     public Socket frontend; // Listen to clients
     public Socket backend;  // Listen to workers
-    public Queue<ZFrame> workers;  // List of ready workers
+    public HashRing workers;  // Hash ring of ready workers
 }
