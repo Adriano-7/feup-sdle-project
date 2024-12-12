@@ -23,18 +23,19 @@ public class BackendHandler implements ZLoop.IZLoopHandler {
         ZMsg msg = ZMsg.recvMsg(arg.backend);
         if (msg != null) {
             ZFrame address = msg.unwrap();
-            arg.workers.add(address);
+            arg.workers.addWorker(address);
 
-            if (arg.workers.size() == 1) {
+            if (arg.workers.getWorker("") != null) { // Ensure at least one worker
                 PollItem newItem = new PollItem(arg.frontend, ZMQ.Poller.POLLIN);
                 loop.addPoller(newItem, new FrontendHandler(loadBalancer), arg);
             }
 
             ZFrame frame = msg.getFirst();
-            if (Arrays.equals(frame.getData(), WORKER_READY))
+            if (Arrays.equals(frame.getData(), WORKER_READY)) {
                 msg.destroy();
-            else
+            } else {
                 msg.send(arg.frontend);
+            }
         }
         return 0;
     }
