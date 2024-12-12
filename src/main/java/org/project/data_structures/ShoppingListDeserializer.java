@@ -51,7 +51,7 @@ public class ShoppingListDeserializer implements JsonDeserializer<ShoppingList> 
             }
         }
 
-        // Create and return ShoppingList
-        return new ShoppingList(listID, name, items);
+        boolean isDeleted = jsonObject.get("isDeleted").getAsBoolean();
+        return new ShoppingList(listID, name, items, isDeleted);
     }
 }
