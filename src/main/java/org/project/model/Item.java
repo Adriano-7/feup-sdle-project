@@ -31,6 +31,10 @@ public class Item {
         counter.setMaxValue(counter.getMaxValue() + quantity);
     }
 
+    public long getMaxValue() {
+        return counter.getMaxValue();
+    }
+
     public long consume(String user, long quantity) {
         for (int i = 0; i < quantity; i++) {
             if (!counter.increment(user)) {

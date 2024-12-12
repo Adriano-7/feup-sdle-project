@@ -8,34 +8,23 @@ public class ShoppingList {
     private UUID listID;
     private String name;
     private LWWSet items;
-    private boolean isDeleted;
 
     public ShoppingList(String name) {
         this.listID = UUID.randomUUID();
         this.name = name;
         this.items = new LWWSet();
-        this.isDeleted = false;
     }
 
     public ShoppingList(UUID id, String name) {
         this.listID = id;
         this.name = name;
         this.items = new LWWSet();
-        this.isDeleted = false;
     }
 
     public ShoppingList(UUID id, String name, LWWSet items) {
         this.listID = id;
         this.name = name;
         this.items = items;
-        this.isDeleted = false;
-    }
-
-    public ShoppingList(UUID id, String name, LWWSet items, boolean isDeleted) {
-        this.listID = id;
-        this.name = name;
-        this.items = items;
-        this.isDeleted = isDeleted;
     }
 
     public UUID getID() {return listID;}
@@ -64,14 +53,6 @@ public class ShoppingList {
         return items.lookup(id);
     }
 
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
-    public void setDeleted() {
-        isDeleted = true;
-    }
-
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("\n>> LIST: " + name + "\n>> ID: " + listID + "\n");
@@ -85,6 +66,6 @@ public class ShoppingList {
 
     public ShoppingList merge(ShoppingList other) {
         LWWSet mergedItems = items.merge(other.getItems());
-        return new ShoppingList(listID, name, mergedItems, this.isDeleted || other.isDeleted);
+        return new ShoppingList(listID, name, mergedItems);
     }
 }

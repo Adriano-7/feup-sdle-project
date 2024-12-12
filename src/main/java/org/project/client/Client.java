@@ -2,7 +2,6 @@ package org.project.client;
 
 import org.project.client.database.LocalDB;
 import org.project.model.ShoppingList;
-import org.zeromq.ZThread;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -19,8 +18,9 @@ public class Client {
     public Client(String username) {
         this.username = username;
         this.localDB = new LocalDB(username);
-        communicationHandler = new CommunicationHandler(username);
-        ZThread.start(communicationHandler);
+        communicationHandler = new CommunicationHandler("tcp://localhost:5555");
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(communicationHandler);
     }
 
     public static void main(String[] args) {
@@ -51,12 +51,9 @@ public class Client {
                 default:
                     System.out.println("Invalid option. Please try again.");
             }
-            if (client.shoppingList != null) {
-                client.updateShoppingList();
-                client.synchronizeShoppingList();
-                client.saveShoppingListLocally();
-                client.shoppingList = null;
-            }
+            client.updateShoppingList();
+            client.synchronizeShoppingList();
+            client.saveShoppingList();
         }
     }
 
@@ -65,17 +62,11 @@ public class Client {
         shoppingList = new ShoppingList(name);
         System.out.println("Your shopping list has been successfully created with the ID: " + shoppingList.getID());
         synchronizeShoppingList();
-        saveShoppingListLocally();
+        saveShoppingList();
     }
 
-    public void saveShoppingListLocally() {
-        if (!shoppingList.isDeleted()) {
-            System.out.println("Saving shopping list...");
-            localDB.saveShoppingList(this.shoppingList);
-        } else {
-            localDB.deleteShoppingList(this.shoppingList.getID().toString());
-            System.out.println("Shopping list has been deleted. Saving changes...");
-        }
+    public void saveShoppingList() {
+        localDB.saveShoppingList(this.shoppingList);
     }
 
     public void synchronizeShoppingList() {
@@ -83,10 +74,6 @@ public class Client {
             try {
                 communicationHandler.writeShoppingList(this.shoppingList);
                 String response = communicationHandler.getResponse();
-                if (response.equals("error/list_deleted")) {
-                    shoppingList.setDeleted();
-                    return;
-                }
                 ShoppingList serverList = communicationHandler.parseShoppingListResponse(response);
                 if (serverList != null) {
                     System.out.println("Shopping list synchronized with server successfully!");
@@ -104,6 +91,7 @@ public class Client {
     public void searchShoppingList() {
         while (true) {
             String id = getShoppingListIdFromUser();
+
             try {
                 shoppingList = localDB.getShoppingList(id);
 
@@ -119,19 +107,15 @@ public class Client {
                 else {
                     communicationHandler.readShoppingList(id);
                     String response = communicationHandler.getResponse();
-                    if (response.equals("error/list_deleted")) {
-                        System.out.println("This Shopping List has been deleted.");
-                        break;
-                    } else if (response.equals("error/list_not_found")) {
-                        System.out.println("Shopping List not found. Please try again.\n");
-                    }
-                    else {
+                    if (!response.equals("error/list_not_found")) {
                         shoppingList = communicationHandler.parseShoppingListResponse(response);
                         if (shoppingList != null) {
                             System.out.println("Shopping List found on server!");
                             localDB.saveShoppingList(shoppingList);
                             break;
                         }
+                    } else {
+                        System.out.println("Shopping List not found. Please try again.\n");
                     }
                 }
             } catch (InterruptedException e) {
@@ -141,35 +125,8 @@ public class Client {
         }
     }
 
-    public void deleteShoppingList() {
-        if (shoppingList != null) {
-            shoppingList.setDeleted();
-            if (communicationHandler.isServerRunning()) {
-                try {
-                    communicationHandler.deleteShoppingList(shoppingList.getID().toString());
-                    String response = communicationHandler.getResponse();
-                    if (response.equals("success/deleted")) {
-                        System.out.println("Shopping list deleted successfully.");
-                    } else {
-                        System.out.println("Failed to delete shopping list.");
-                    }
-                } catch (InterruptedException e) {
-                    System.err.println("Failed to delete shopping list: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            } else {
-                System.out.println("Server is offline. Cannot delete shopping list.");
-            }
-        } else {
-            System.out.println("No shopping list to delete.");
-        }
-    }
-
     public void updateShoppingList() {
         while (true) {
-            if (shoppingList.isDeleted()) {
-                return;
-            }
             System.out.println("\n================== Shopping List App ==================\n");
             System.out.println(  "                Server Status: " + (communicationHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
@@ -178,14 +135,14 @@ public class Client {
             System.out.println("1. Add item to shopping list");
             System.out.println("2. Remove item from shopping list");
             System.out.println("3. Consume item from shopping list");
-            System.out.println("4. Delete shopping list");
             if (communicationHandler.isServerRunning()) {
-                System.out.println("5. Synchronize shopping list with server");
-                System.out.println("6. Back");
-            }
-            else {
+                System.out.println("4. Synchronize shopping list with server");
                 System.out.println("5. Back");
             }
+            else {
+                System.out.println("4. Back");
+            }
+
 
             int option = getIntFromUser("Enter your choice:");
             String name;
@@ -217,12 +174,6 @@ public class Client {
                     }
                     break;
                 case 4:
-                    if(getYesNoFromUser("Are you sure? List will be deleted permanently.")) {
-                        deleteShoppingList();
-                        return;
-                    }
-                    break;
-                case 5:
                     if (communicationHandler.isServerRunning()) {
                         synchronizeShoppingList();
                         break;
@@ -230,7 +181,7 @@ public class Client {
                     else {
                         return;
                     }
-                case 6:
+                case 5:
                     return;
                 default:
                     System.out.println("Invalid option. Please try again.");
@@ -296,21 +247,6 @@ public class Client {
             } catch (InputMismatchException e) {
                 System.out.println("Invalid input. Please enter a valid integer.");
                 scanner.next();
-            }
-        }
-    }
-
-    private boolean getYesNoFromUser(String prompt) {
-        while (true) {
-            System.out.println(prompt + " (y/n)");
-            String input = scanner.nextLine().trim().toLowerCase();
-
-            if (input.equals("y")) {
-                return true;
-            } else if (input.equals("n")) {
-                return false;
-            } else {
-                System.out.println("Invalid input. Please enter 'y' or 'n'.");
             }
         }
     }
