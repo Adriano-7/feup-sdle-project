@@ -46,11 +46,17 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
             while (true) {
                 String command = commandQueue.take();
                 client.send(command);
-
                 String reply = client.recvStr();
                 if(reply == null){
                     System.err.println("Server did not respond in time. Proceeding without synchronization.");
                     responseQueue.put("error/server_unavailable");
+
+                    // Reconnect the socket
+                    client.close();
+                    client = context.createSocket(SocketType.REQ);
+                    client.setIdentity(("C" + username).getBytes());
+                    client.connect("ipc://frontend.ipc");
+                    client.setReceiveTimeOut(2000); // Set timeout for server responses
                 }else{
                     responseQueue.put(reply);
                 }

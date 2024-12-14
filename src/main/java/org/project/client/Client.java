@@ -79,7 +79,6 @@ public class Client {
         try {
             communicationHandler.writeShoppingList(this.shoppingList);
             String response = communicationHandler.getResponse();
-
             if (response.equals("error/server_unavailable")) {
                 // Log the issue silently and continue
                 System.err.println("Server unavailable. Changes will remain local.");
