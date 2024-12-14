@@ -77,8 +77,23 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
         }
     }
 
-    //TODO: Vamos ter que remover esta logica, e em vez de polling fazer timeout
     public boolean isServerRunning() {
-        return true;
+        try (ZContext context = new ZContext()) {
+            ZMQ.Socket client = context.createSocket(SocketType.REQ);
+            client.setIdentity(("C_health_check_" + username).getBytes());
+            client.connect("ipc://frontend.ipc");
+
+            client.setReceiveTimeOut(1000);  // 1 seconds timeout
+
+            try {
+                client.send("ping");
+
+                String response = client.recvStr();
+
+                return response != null;
+            } catch (Exception e) {
+                return false;
+            }
+        }
     }
 }

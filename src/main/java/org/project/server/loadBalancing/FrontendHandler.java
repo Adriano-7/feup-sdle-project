@@ -12,11 +12,20 @@ public class FrontendHandler implements ZLoop.IZLoopHandler {
         ZMsg msg = ZMsg.recvMsg(arg.frontend);
 
         if (msg != null) {
-            String listId = getListId(msg);
-            ZFrame worker = arg.workers.getWorker(listId);
-            if (worker != null) {
-                msg.wrap(worker);
-                msg.send(arg.backend);
+            if (msg.toString().contains("ping")) {
+                ZFrame worker = arg.workers.getWorker("");
+                if (worker != null) {
+                    msg.wrap(worker);
+                    msg.send(arg.backend);
+                }
+            }
+            else{
+                String listId = getListId(msg);
+                ZFrame worker = arg.workers.getWorker(listId);
+                if (worker != null) {
+                    msg.wrap(worker);
+                    msg.send(arg.backend);
+                }
             }
 
             if (arg.workers == null) {
