@@ -55,9 +55,6 @@ public class WorkerTask implements ZThread.IDetachedRunnable {
 
     private String processRequest(String message) {
         try {
-            if (message.startsWith("ping")) {
-                return "pong";
-            }
             if (message.startsWith("read/")) {
                 return handleReadCommand(message.substring(5));
             }

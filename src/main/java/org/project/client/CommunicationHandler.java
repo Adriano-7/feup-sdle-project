@@ -1,19 +1,19 @@
 package org.project.client;
 
-import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
-import org.zeromq.ZContext;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.project.data_structures.LWWSet;
 import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
 import org.project.model.ShoppingList;
+import org.zeromq.SocketType;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 import org.zeromq.ZThread;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class CommunicationHandler implements ZThread.IDetachedRunnable {
     private final BlockingQueue<String> commandQueue;
@@ -40,14 +40,26 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
             ZMQ.Socket client = context.createSocket(SocketType.REQ);
             client.setIdentity(("C" + username).getBytes());
             client.connect("ipc://frontend.ipc");
+            client.setReceiveTimeOut(2000); // Set timeout for server responses
 
             // Send request, get reply
             while (true) {
                 String command = commandQueue.take();
                 client.send(command);
-
                 String reply = client.recvStr();
-                responseQueue.put(reply);
+                if(reply == null){
+                    System.err.println("Server did not respond in time. Proceeding without synchronization.");
+                    responseQueue.put("error/server_unavailable");
+
+                    // Reconnect the socket
+                    client.close();
+                    client = context.createSocket(SocketType.REQ);
+                    client.setIdentity(("C" + username).getBytes());
+                    client.connect("ipc://frontend.ipc");
+                    client.setReceiveTimeOut(2000); // Set timeout for server responses
+                }else{
+                    responseQueue.put(reply);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -77,23 +89,5 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
         }
     }
 
-    public boolean isServerRunning() {
-        try (ZContext context = new ZContext()) {
-            ZMQ.Socket client = context.createSocket(SocketType.REQ);
-            client.setIdentity(("C_health_check_" + username).getBytes());
-            client.connect("ipc://frontend.ipc");
-
-            client.setReceiveTimeOut(1000);  // 1 seconds timeout
-
-            try {
-                client.send("ping");
-
-                String response = client.recvStr();
-
-                return response != null;
-            } catch (Exception e) {
-                return false;
-            }
-        }
-    }
+    
 }

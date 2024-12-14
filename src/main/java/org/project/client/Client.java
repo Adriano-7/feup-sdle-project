@@ -1,13 +1,11 @@
 package org.project.client;
 
+import java.util.InputMismatchException;
+import java.util.Scanner;
+
 import org.project.client.database.LocalDB;
 import org.project.model.ShoppingList;
 import org.zeromq.ZThread;
-
-import java.util.InputMismatchException;
-import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Client {
     private final Scanner scanner = new Scanner(System.in);
@@ -30,7 +28,6 @@ public class Client {
 
         while (true){
             System.out.println("\n================== Shopping List App ==================\n");
-            System.out.println(  "                Server Status: " + (client.communicationHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
             System.out.println("\nSelect an option:");
             System.out.println("1. Create a new shopping list");
@@ -79,25 +76,26 @@ public class Client {
     }
 
     public void synchronizeShoppingList() {
-        if (communicationHandler.isServerRunning()) {
-            try {
-                communicationHandler.writeShoppingList(this.shoppingList);
-                String response = communicationHandler.getResponse();
-                if (response.equals("error/list_deleted")) {
-                    shoppingList.setDeleted();
-                    return;
-                }
-                ShoppingList serverList = communicationHandler.parseShoppingListResponse(response);
-                if (serverList != null) {
-                    System.out.println("Shopping list synchronized with server successfully!");
-                    this.shoppingList = serverList;
-                }
-            } catch (InterruptedException e) {
-                System.err.println("Failed to synchronize with server: " + e.getMessage());
-                Thread.currentThread().interrupt();
+        try {
+            communicationHandler.writeShoppingList(this.shoppingList);
+            String response = communicationHandler.getResponse();
+            if (response.equals("error/server_unavailable")) {
+                // Log the issue silently and continue
+                System.err.println("Server unavailable. Changes will remain local.");
+                return;
             }
-        } else {
-            System.out.println("Server is offline. Cannot synchronize shopping list.");
+            if (response.equals("error/list_deleted")) {
+                shoppingList.setDeleted();
+                return;
+            }
+            ShoppingList serverList = communicationHandler.parseShoppingListResponse(response);
+            if (serverList != null) {
+                System.out.println("Shopping list synchronized with server successfully!");
+                this.shoppingList = serverList;
+            }
+        } catch (InterruptedException e) {
+            System.err.println("Failed to synchronize with server: " + e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -107,12 +105,8 @@ public class Client {
             try {
                 shoppingList = localDB.getShoppingList(id);
 
-                if (shoppingList != null && communicationHandler.isServerRunning()) {
+                if (shoppingList != null) {
                     synchronizeShoppingList();
-                    System.out.println("Shopping List found in local database and synchronized with server!");
-                    break;
-                }
-                else if (shoppingList != null) {
                     System.out.println("Shopping List found in local database!");
                     break;
                 }
@@ -144,21 +138,17 @@ public class Client {
     public void deleteShoppingList() {
         if (shoppingList != null) {
             shoppingList.setDeleted();
-            if (communicationHandler.isServerRunning()) {
-                try {
-                    communicationHandler.deleteShoppingList(shoppingList.getID().toString());
-                    String response = communicationHandler.getResponse();
-                    if (response.equals("success/deleted")) {
-                        System.out.println("Shopping list deleted successfully.");
-                    } else {
-                        System.out.println("Failed to delete shopping list.");
-                    }
-                } catch (InterruptedException e) {
-                    System.err.println("Failed to delete shopping list: " + e.getMessage());
-                    Thread.currentThread().interrupt();
+            try {
+                communicationHandler.deleteShoppingList(shoppingList.getID().toString());
+                String response = communicationHandler.getResponse();
+                if (response.equals("success/deleted")) {
+                    System.out.println("Shopping list deleted successfully.");
+                } else {
+                    System.out.println("Failed to delete shopping list.");
                 }
-            } else {
-                System.out.println("Server is offline. Cannot delete shopping list.");
+            } catch (InterruptedException e) {
+                System.err.println("Failed to delete shopping list: " + e.getMessage());
+                Thread.currentThread().interrupt();
             }
         } else {
             System.out.println("No shopping list to delete.");
@@ -171,7 +161,6 @@ public class Client {
                 return;
             }
             System.out.println("\n================== Shopping List App ==================\n");
-            System.out.println(  "                Server Status: " + (communicationHandler.isServerRunning() ? "Online" : "Offline") + "\n");
 
             System.out.println(shoppingList);
             System.out.println("Select an option:");
@@ -179,13 +168,9 @@ public class Client {
             System.out.println("2. Remove item from shopping list");
             System.out.println("3. Consume item from shopping list");
             System.out.println("4. Delete shopping list");
-            if (communicationHandler.isServerRunning()) {
-                System.out.println("5. Synchronize shopping list with server");
-                System.out.println("6. Back");
-            }
-            else {
-                System.out.println("5. Back");
-            }
+            System.out.println("5. Synchronize shopping list with server");
+            System.out.println("6. Back");
+            
 
             int option = getIntFromUser("Enter your choice:");
             String name;
@@ -223,13 +208,8 @@ public class Client {
                     }
                     break;
                 case 5:
-                    if (communicationHandler.isServerRunning()) {
-                        synchronizeShoppingList();
-                        break;
-                    }
-                    else {
-                        return;
-                    }
+                    synchronizeShoppingList();
+                    break;
                 case 6:
                     return;
                 default:
