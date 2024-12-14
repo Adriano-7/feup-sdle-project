@@ -7,14 +7,14 @@ import java.util.Comparator;
 
 public class Item {
     private String name;
-    BGCounter<String> counter;
+    BGCounter counter;
 
     public Item(String name, long quantity) {
         this.name = name;
-        this.counter = new BGCounter<>(quantity);
+        this.counter = new BGCounter(quantity);
     }
 
-    public Item(String name, BGCounter<String> counter) {
+    public Item(String name, BGCounter counter) {
         this.name = name;
         this.counter = counter;
     }

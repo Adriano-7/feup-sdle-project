@@ -37,7 +37,7 @@ public class ShoppingListDeserializer implements JsonDeserializer<ShoppingList> 
                 ConcurrentHashMap<String, AtomicLong> payload = itemDetails.getAsJsonObject("counter").getAsJsonObject("payload").entrySet().stream()
                         .collect(ConcurrentHashMap::new, (map, e) -> map.put(e.getKey(), new AtomicLong(e.getValue().getAsLong())), ConcurrentHashMap::putAll);
 
-                BGCounter<String> counter = new BGCounter<>(maxValue, payload);
+                BGCounter counter = new BGCounter(maxValue, payload);
                 Item item = new Item(itemName, counter);
 
                 // Create item info map
