@@ -3,9 +3,9 @@ package org.project.server.database;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.project.data_structures.LWWSet;
-import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
+import org.project.data_structures.test.AWORSet;
+import org.project.data_structures.test.AWORSetSerializer;
 import org.project.model.ShoppingList;
 
 import java.io.File;
@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class ServerDB {
     private static final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+            .registerTypeAdapter(AWORSet.class, new AWORSetSerializer())
             .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
             .create();
     public static Map<String, ShoppingList> loadShoppingLists(int workerNbr) {

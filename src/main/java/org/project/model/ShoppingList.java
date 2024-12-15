@@ -2,36 +2,36 @@ package org.project.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import org.project.data_structures.LWWSet;
+import org.project.data_structures.test.AWORSet;
 
 public class ShoppingList {
     private UUID listID;
     private String name;
-    private LWWSet items;
+    private AWORSet items;
     private boolean isDeleted;
 
     public ShoppingList(String name) {
         this.listID = UUID.randomUUID();
         this.name = name;
-        this.items = new LWWSet();
+        this.items = new AWORSet();
         this.isDeleted = false;
     }
 
     public ShoppingList(UUID id, String name) {
         this.listID = id;
         this.name = name;
-        this.items = new LWWSet();
+        this.items = new AWORSet();
         this.isDeleted = false;
     }
 
-    public ShoppingList(UUID id, String name, LWWSet items) {
+    public ShoppingList(UUID id, String name, AWORSet items) {
         this.listID = id;
         this.name = name;
         this.items = items;
         this.isDeleted = false;
     }
 
-    public ShoppingList(UUID id, String name, LWWSet items, boolean isDeleted) {
+    public ShoppingList(UUID id, String name, AWORSet items, boolean isDeleted) {
         this.listID = id;
         this.name = name;
         this.items = items;
@@ -44,16 +44,16 @@ public class ShoppingList {
         return name;
     }
 
-    public LWWSet getItems() {
+    public AWORSet getItems() {
         return items;
     }
 
-    public void addItem(String name, int quantity) {
-        this.items.add(name, quantity);
+    public void addItem(String nodeId, String name, int quantity) {
+        this.items.add(nodeId, name, quantity);
     }
 
-    public void removeItem(String id) {
-        this.items.remove(id);
+    public void removeItem(String nodeId, String id) {
+        this.items.remove(nodeId, id);
     }
 
     public long consumeItem(String id, String user, int quantity) {
@@ -84,7 +84,7 @@ public class ShoppingList {
     }
 
     public ShoppingList merge(ShoppingList other) {
-        LWWSet mergedItems = items.merge(other.getItems());
+        AWORSet mergedItems = items.merge(other.getItems());
         return new ShoppingList(listID, name, mergedItems, this.isDeleted || other.isDeleted);
     }
 }

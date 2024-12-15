@@ -3,6 +3,8 @@ package org.project.data_structures;
 import com.google.gson.*;
 import org.project.data_structures.BGCounter;
 import org.project.data_structures.LWWSet;
+import org.project.data_structures.test.AWORSet;
+import org.project.data_structures.test.VClockItemPair;
 import org.project.model.Item;
 import org.project.model.ShoppingList;
 
@@ -23,32 +25,24 @@ public class ShoppingListDeserializer implements JsonDeserializer<ShoppingList> 
         String name = jsonObject.get("name").getAsString();
 
         // Create a new LWWSet to populate
-        LWWSet items = new LWWSet();
+        AWORSet items = new AWORSet();
 
         // Deserialize items
         JsonObject itemsJson = jsonObject.getAsJsonObject("items");
-        if (itemsJson != null) {
-            for (Map.Entry<String, JsonElement> entry : itemsJson.entrySet()) {
-                String itemName = entry.getKey();
-                JsonObject itemInfo = entry.getValue().getAsJsonObject();
+        JsonObject addSetJson = itemsJson.has("addSet") ? itemsJson.getAsJsonObject("addSet") : new JsonObject();
+        for (Map.Entry<String, JsonElement> entry : addSetJson.entrySet()) {
+            String itemName = entry.getKey();
+            JsonObject pairJson = entry.getValue().getAsJsonObject();
+            VClockItemPair pair = context.deserialize(pairJson, VClockItemPair.class);
+            items.addSet.put(itemName, pair);
+        }
 
-                JsonObject itemDetails = itemInfo.getAsJsonObject("item");
-                int maxValue = itemDetails.getAsJsonObject("counter").get("maxValue").getAsInt();
-                ConcurrentHashMap<String, AtomicLong> payload = itemDetails.getAsJsonObject("counter").getAsJsonObject("payload").entrySet().stream()
-                        .collect(ConcurrentHashMap::new, (map, e) -> map.put(e.getKey(), new AtomicLong(e.getValue().getAsLong())), ConcurrentHashMap::putAll);
-
-                BGCounter counter = new BGCounter(maxValue, payload);
-                Item item = new Item(itemName, counter);
-
-                // Create item info map
-                Map<String, Object> itemInfoMap = new HashMap<>();
-                itemInfoMap.put("item", item);
-                itemInfoMap.put("add-time", itemInfo.get("add-time").getAsDouble());
-                itemInfoMap.put("rmv-time", itemInfo.get("rmv-time").getAsDouble());
-
-                // Add to LWWSet
-                items.items.put(itemName, itemInfoMap);
-            }
+        JsonObject remSetJson = itemsJson.has("remSet") ? itemsJson.getAsJsonObject("remSet") : new JsonObject();
+        for (Map.Entry<String, JsonElement> entry : remSetJson.entrySet()) {
+            String itemName = entry.getKey();
+            JsonObject pairJson = entry.getValue().getAsJsonObject();
+            VClockItemPair pair = context.deserialize(pairJson, VClockItemPair.class);
+            items.removeSet.put(itemName, pair);
         }
 
         boolean isDeleted = jsonObject.get("isDeleted").getAsBoolean();

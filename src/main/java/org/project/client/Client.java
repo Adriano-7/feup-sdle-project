@@ -185,11 +185,11 @@ public class Client {
                         System.out.println("Item does not exist in the shopping list. Adding new item.");
                         quantity = getIntFromUser("Enter the quantity:");
                     }
-                    shoppingList.addItem(name, quantity);
+                    shoppingList.addItem(username, name, quantity);
                     break;
                 case 2:
                     name = getStringFromUser("Enter the name of the item:");
-                    shoppingList.removeItem(name);
+                    shoppingList.removeItem(username, name);
                     break;
                 case 3:
                     name = getStringFromUser("Enter the name of the item:");
@@ -208,6 +208,7 @@ public class Client {
                     }
                     break;
                 case 5:
+                    saveShoppingListLocally();
                     synchronizeShoppingList();
                     break;
                 case 6:

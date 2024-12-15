@@ -3,9 +3,10 @@ package org.project.client.database;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.project.data_structures.LWWSet;
-import org.project.data_structures.LWWSetSerializer;
+
 import org.project.data_structures.ShoppingListDeserializer;
+import org.project.data_structures.test.AWORSet;
+import org.project.data_structures.test.AWORSetSerializer;
 import org.project.model.ShoppingList;
 
 import java.io.*;
@@ -19,7 +20,7 @@ public class LocalDB {
 
     public LocalDB(String username) {
         this.gson = new GsonBuilder()
-                .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+                .registerTypeAdapter(AWORSet.class, new AWORSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .create();
         this.filePath = "src/main/java/org/project/client/database/storage/" + username + ".json";

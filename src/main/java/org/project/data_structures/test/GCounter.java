@@ -13,10 +13,6 @@ public class GCounter implements Serializable {
         this.payload = new ConcurrentHashMap<>();
     }
 
-    public GCounter(ConcurrentHashMap<String, AtomicLong> payload){
-        this.payload = payload;
-    }
-
     public void addNode(String nodeId) {
         Objects.requireNonNull(nodeId, "Node identifier cannot be null");
 

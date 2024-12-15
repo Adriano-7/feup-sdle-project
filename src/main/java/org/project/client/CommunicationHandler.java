@@ -3,9 +3,9 @@ package org.project.client;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.project.data_structures.LWWSet;
-import org.project.data_structures.LWWSetSerializer;
 import org.project.data_structures.ShoppingListDeserializer;
+import org.project.data_structures.test.AWORSet;
+import org.project.data_structures.test.AWORSetSerializer;
 import org.project.model.ShoppingList;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -30,7 +30,7 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
         this.responseQueue = new LinkedBlockingQueue<>();
 
         this.gson = new GsonBuilder()
-                .registerTypeAdapter(LWWSet.class, new LWWSetSerializer())
+                .registerTypeAdapter(AWORSet.class, new AWORSetSerializer())
                 .registerTypeAdapter(ShoppingList.class, new ShoppingListDeserializer())
                 .create();
     }

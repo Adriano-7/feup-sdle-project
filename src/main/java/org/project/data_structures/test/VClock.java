@@ -65,6 +65,8 @@ public class VClock {
 
     @Override
     public String toString() {
-        return "VClock{" + "counter=" + counter + '}';
+        return "VClock{" +
+                "counter=" + counter.getPayload() +
+                '}';
     }
 }
