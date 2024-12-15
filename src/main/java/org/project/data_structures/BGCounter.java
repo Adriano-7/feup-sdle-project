@@ -18,11 +18,6 @@ public class BGCounter implements Serializable {
         this.maxValue = maxValue;
     }
 
-    public BGCounter(long maxValue, ConcurrentHashMap<String, AtomicLong> payload){
-        this.maxValue = maxValue;
-        this.payload = payload;
-    }
-
     public void addNode(String nodeId) {
         Objects.requireNonNull(nodeId, "Node identifier cannot be null");
 

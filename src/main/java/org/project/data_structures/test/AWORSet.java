@@ -16,6 +16,7 @@ public class AWORSet {
     public Map<String, VClockItemPair> getValue() {
         Map<String, VClockItemPair> result = new ConcurrentHashMap<>(addSet);
 
+        //Remove from add set all entries whose add clock is less than the remove clock (the item has been removed)
         removeSet.forEach((key, remPair) -> {
             if (result.containsKey(key)) {
                 VClock addClock = result.get(key).getVClock();
@@ -34,23 +35,43 @@ public class AWORSet {
         // No -> Add the item to the shopping list and update time
     */
     public void add(String nodeId, String itemName, int quantity) {
-        if(addSet.containsKey(itemName)) {
+        if(addSet.containsKey(itemName)){
             VClockItemPair newPair = addSet.get(itemName);
             newPair.getVClock().increment(nodeId);
             newPair.getItem().increaseMax(quantity);
             addSet.put(itemName, newPair);
-        } else {
+        }
+        else if (removeSet.containsKey(itemName)){
+            VClockItemPair newPair = removeSet.get(itemName);
+            newPair.getVClock().increment(nodeId);
+            newPair.setItem(new Item(itemName, quantity));
+            addSet.put(itemName, newPair);
+            removeSet.remove(itemName);
+        }
+        else{
             VClockItemPair newPair = new VClockItemPair(new VClock(), new Item(itemName, quantity));
             newPair.getVClock().increment(nodeId);
             addSet.put(itemName, newPair);
         }
     }
-
+    
     public void remove(String nodeId, String element) {
-        VClockItemPair newPair = addSet.getOrDefault(element, new VClockItemPair(new VClock(), null));
-        newPair.getVClock().increment(nodeId);
-        removeSet.put(element, newPair);
-        addSet.remove(element);
+        if(addSet.containsKey(element)){
+            VClockItemPair newPair = addSet.get(element);
+            newPair.getVClock().increment(nodeId);
+            removeSet.put(element, newPair);
+            addSet.remove(element);
+        }
+        else if (removeSet.containsKey(element)){
+            VClockItemPair newPair = removeSet.get(element);
+            newPair.getVClock().increment(nodeId);
+            removeSet.put(element, newPair);
+        }
+        else{
+            VClockItemPair newPair = new VClockItemPair(new VClock(), null);
+            newPair.getVClock().increment(nodeId);
+            removeSet.put(element, newPair);
+        }
     }
 
     public AWORSet merge(AWORSet other) {
