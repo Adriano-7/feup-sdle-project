@@ -1,6 +1,6 @@
-package org.project.data_structures;
+package org.project.data_structures.crdts;
 
-import org.project.model.Item;
+import org.project.data_structures.model.Item;
 
 public class VClockItemPair {
     private VClock vClock;

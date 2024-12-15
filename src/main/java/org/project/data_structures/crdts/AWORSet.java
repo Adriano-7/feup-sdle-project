@@ -1,6 +1,6 @@
-package org.project.data_structures;
+package org.project.data_structures.crdts;
 
-import org.project.model.Item;
+import org.project.data_structures.model.Item;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 

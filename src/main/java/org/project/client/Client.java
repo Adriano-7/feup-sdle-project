@@ -3,7 +3,7 @@ package org.project.client;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 import org.project.client.database.LocalDB;
-import org.project.model.ShoppingList;
+import org.project.data_structures.model.ShoppingList;
 import org.zeromq.ZThread;
 
 public class Client {

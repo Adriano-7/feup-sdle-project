@@ -1,4 +1,4 @@
-package org.project.data_structures;
+package org.project.data_structures.crdts;
 
 import java.io.Serializable;
 import java.util.Objects;

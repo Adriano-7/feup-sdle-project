@@ -1,7 +1,7 @@
-package org.project.model;
+package org.project.data_structures.model;
 
 import java.util.UUID;
-import org.project.data_structures.AWORSet;
+import org.project.data_structures.crdts.AWORSet;
 
 public class ShoppingList {
     private UUID listID;

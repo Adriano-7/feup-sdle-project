@@ -1,6 +1,6 @@
-package org.project.model;
+package org.project.data_structures.model;
 
-import org.project.data_structures.BGCounter;
+import org.project.data_structures.crdts.BGCounter;
 
 public class Item {
     private String name;

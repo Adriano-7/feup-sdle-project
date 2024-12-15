@@ -1,9 +1,9 @@
 package org.project.data_structures.serializers;
 
 import com.google.gson.*;
-import org.project.data_structures.AWORSet;
-import org.project.data_structures.VClockItemPair;
-import org.project.model.ShoppingList;
+import org.project.data_structures.crdts.AWORSet;
+import org.project.data_structures.crdts.VClockItemPair;
+import org.project.data_structures.model.ShoppingList;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.UUID;

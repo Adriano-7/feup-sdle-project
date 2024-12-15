@@ -4,8 +4,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import org.project.data_structures.AWORSet;
-import org.project.data_structures.VClockItemPair;
+import org.project.data_structures.crdts.AWORSet;
+import org.project.data_structures.crdts.VClockItemPair;
 import java.lang.reflect.Type;
 import java.util.Map;
 
