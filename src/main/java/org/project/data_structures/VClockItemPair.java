@@ -1,4 +1,4 @@
-package org.project.data_structures.test;
+package org.project.data_structures;
 
 import org.project.model.Item;
 

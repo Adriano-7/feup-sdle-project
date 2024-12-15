@@ -2,16 +2,14 @@ package org.project.client;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.project.data_structures.ShoppingListDeserializer;
-import org.project.data_structures.test.AWORSet;
-import org.project.data_structures.test.AWORSetSerializer;
+import org.project.data_structures.serializers.ShoppingListDeserializer;
+import org.project.data_structures.AWORSet;
+import org.project.data_structures.serializers.AWORSetSerializer;
 import org.project.model.ShoppingList;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZThread;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -40,7 +38,7 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
             ZMQ.Socket client = context.createSocket(SocketType.REQ);
             client.setIdentity(("C" + username).getBytes());
             client.connect("ipc://frontend.ipc");
-            client.setReceiveTimeOut(2000); // Set timeout for server responses
+            client.setReceiveTimeOut(2000);
 
             // Send request, get reply
             while (true) {
@@ -56,7 +54,7 @@ public class CommunicationHandler implements ZThread.IDetachedRunnable {
                     client = context.createSocket(SocketType.REQ);
                     client.setIdentity(("C" + username).getBytes());
                     client.connect("ipc://frontend.ipc");
-                    client.setReceiveTimeOut(2000); // Set timeout for server responses
+                    client.setReceiveTimeOut(2000);
                 }else{
                     responseQueue.put(reply);
                 }

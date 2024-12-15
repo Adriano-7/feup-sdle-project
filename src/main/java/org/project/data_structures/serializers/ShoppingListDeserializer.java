@@ -1,19 +1,12 @@
-package org.project.data_structures;
+package org.project.data_structures.serializers;
 
 import com.google.gson.*;
-import org.project.data_structures.BGCounter;
-import org.project.data_structures.LWWSet;
-import org.project.data_structures.test.AWORSet;
-import org.project.data_structures.test.VClockItemPair;
-import org.project.model.Item;
+import org.project.data_structures.AWORSet;
+import org.project.data_structures.VClockItemPair;
 import org.project.model.ShoppingList;
-
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ShoppingListDeserializer implements JsonDeserializer<ShoppingList> {
     @Override

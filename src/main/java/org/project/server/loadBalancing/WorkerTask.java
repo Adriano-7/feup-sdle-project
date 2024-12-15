@@ -2,13 +2,12 @@ package org.project.server.loadBalancing;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.project.data_structures.ShoppingListDeserializer;
-import org.project.data_structures.test.AWORSet;
-import org.project.data_structures.test.AWORSetSerializer;
+import org.project.data_structures.serializers.ShoppingListDeserializer;
+import org.project.data_structures.AWORSet;
+import org.project.data_structures.serializers.AWORSetSerializer;
 import org.project.model.ShoppingList;
 import org.project.server.database.ServerDB;
 import org.zeromq.*;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

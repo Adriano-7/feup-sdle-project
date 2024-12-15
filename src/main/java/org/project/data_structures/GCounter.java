@@ -1,5 +1,4 @@
-package org.project.data_structures.test;
-
+package org.project.data_structures;
 
 import java.io.Serializable;
 import java.util.Objects;

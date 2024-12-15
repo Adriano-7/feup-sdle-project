@@ -1,4 +1,5 @@
-package org.project.data_structures.test;
+package org.project.data_structures;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

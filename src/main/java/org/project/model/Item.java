@@ -1,32 +1,14 @@
 package org.project.model;
-import org.project.data_structures.BGCounter;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.Comparator;
+import org.project.data_structures.BGCounter;
 
 public class Item {
     private String name;
     BGCounter counter;
-
     public Item(String name, long quantity) {
         this.name = name;
         this.counter = new BGCounter(quantity);
     }
-
-    public Item(String name, BGCounter counter) {
-        this.name = name;
-        this.counter = counter;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public long getQuantity() {
-        return counter.query();
-    }
-
     public void increaseMax(long quantity) {
         counter.setMaxValue(counter.getMaxValue() + quantity);
     }

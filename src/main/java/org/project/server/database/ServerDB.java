@@ -3,11 +3,10 @@ package org.project.server.database;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.project.data_structures.ShoppingListDeserializer;
-import org.project.data_structures.test.AWORSet;
-import org.project.data_structures.test.AWORSetSerializer;
+import org.project.data_structures.serializers.ShoppingListDeserializer;
+import org.project.data_structures.AWORSet;
+import org.project.data_structures.serializers.AWORSetSerializer;
 import org.project.model.ShoppingList;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;

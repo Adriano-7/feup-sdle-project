@@ -3,12 +3,10 @@ package org.project.client.database;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-
-import org.project.data_structures.ShoppingListDeserializer;
-import org.project.data_structures.test.AWORSet;
-import org.project.data_structures.test.AWORSetSerializer;
+import org.project.data_structures.serializers.ShoppingListDeserializer;
+import org.project.data_structures.AWORSet;
+import org.project.data_structures.serializers.AWORSetSerializer;
 import org.project.model.ShoppingList;
-
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -84,18 +82,14 @@ public class LocalDB {
             File file = new File(filePath);
             Map<String, ShoppingList> shoppingLists;
 
-            // Read existing shopping lists
             try (FileReader reader = new FileReader(file)) {
                 Type type = new TypeToken<Map<String, ShoppingList>>(){}.getType();
                 shoppingLists = gson.fromJson(reader, type);
             }
 
-            // Check if shopping lists exist and contain the specified id
             if (shoppingLists != null && shoppingLists.containsKey(id)) {
-                // Remove the shopping list
                 shoppingLists.remove(id);
 
-                // Write updated shopping lists back to the file
                 try (FileWriter writer = new FileWriter(file)) {
                     writer.write(gson.toJson(shoppingLists));
                 }

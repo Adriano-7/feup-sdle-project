@@ -1,9 +1,9 @@
-package org.project.data_structures.test;
+package org.project.data_structures;
 
 import org.project.model.Item;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+
 public class AWORSet {
     public final Map<String, VClockItemPair> addSet; // listId -> VClockItemPair
     public final Map<String, VClockItemPair> removeSet;
@@ -29,11 +29,6 @@ public class AWORSet {
         return result;
     }
 
-    /*
-        // Item exists in the shopping list?
-        // Yes -> Increase the buying quantity & update time
-        // No -> Add the item to the shopping list and update time
-    */
     public void add(String nodeId, String itemName, int quantity) {
         if(addSet.containsKey(itemName)){
             VClockItemPair newPair = addSet.get(itemName);

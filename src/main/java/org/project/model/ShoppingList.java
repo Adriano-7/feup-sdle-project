@@ -1,8 +1,7 @@
 package org.project.model;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
-import org.project.data_structures.test.AWORSet;
+import org.project.data_structures.AWORSet;
 
 public class ShoppingList {
     private UUID listID;
@@ -16,21 +15,6 @@ public class ShoppingList {
         this.items = new AWORSet();
         this.isDeleted = false;
     }
-
-    public ShoppingList(UUID id, String name) {
-        this.listID = id;
-        this.name = name;
-        this.items = new AWORSet();
-        this.isDeleted = false;
-    }
-
-    public ShoppingList(UUID id, String name, AWORSet items) {
-        this.listID = id;
-        this.name = name;
-        this.items = items;
-        this.isDeleted = false;
-    }
-
     public ShoppingList(UUID id, String name, AWORSet items, boolean isDeleted) {
         this.listID = id;
         this.name = name;
@@ -39,11 +23,6 @@ public class ShoppingList {
     }
 
     public UUID getID() {return listID;}
-
-    public String getName() {
-        return name;
-    }
-
     public AWORSet getItems() {
         return items;
     }
