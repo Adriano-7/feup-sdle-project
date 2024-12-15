@@ -28,6 +28,7 @@ public class GCounter implements Serializable {
             addNode(nodeId);
         }
         AtomicLong counter = payload.get(nodeId);
+        counter.incrementAndGet();
 
         if (counter == null) {
             throw new IllegalStateException("Node " + nodeId + " does not exist");
